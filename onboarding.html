@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to FeedWise</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .onboarding-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .newtab-section {
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .newtab-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .newtab-description {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle.active {
+            background: #4CAF50;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .toggle-label {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .note {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 140px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .btn-primary:hover {
+            background: white;
+            color: #5a6fd8;
+        }
+
+        @media (max-width: 640px) {
+            .onboarding-container {
+                padding: 32px 24px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <div class="logo">🦉</div>
+        <h1 class="title">Welcome to FeedWise!</h1>
+        <p class="subtitle">Reclaim your social feed. <br> Replace doomscrolling with intentional wisdom from your Readwise account. <br>
+             </p>
+
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">📱</span>
+                <div class="feature-title">Multi-Site</div>
+                <div class="feature-description">Works on Facebook, Twitter, and Instagram</div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📚</span>
+                <div class="feature-title">Content that YOU choose</div>
+                <div class="feature-description">Shows your Readwise highlights and Obsidian notes</div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🌙</span>
+                <div class="feature-title">Distraction-free Design</div>
+                <div class="feature-description">With dark mode + subtle animations</div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">📝</span>
+                <div class="feature-title">Markdown-Ready</div>
+                <div class="feature-description">Full support for formatted notes and highlights</div>
+            </div>
+        </div>
+
+        <div class="newtab-section">
+            <div class="newtab-title">
+                <span>🚀</span>
+                <span>Set as New Tab Page?</span>
+            </div>
+            <div class="newtab-description">
+                Start every browsing session with wisdom instead of a blank page
+            </div>
+            <div class="toggle-container">
+                <span class="toggle-label">Enable FeedWise New Tab</span>
+                <div class="toggle active" id="newtab-toggle">
+                    <div class="toggle-slider"></div>
+                </div>
+            </div>
+            <div class="note">You can always change this later in extension settings
+                <br><br>
+                This is an unofficial extension, and not associated with Readwise or Readwise Reader.
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="get-started-btn">Get Started</button>
+            <a href="chrome-extension://EXTENSION_ID/options.html" class="btn" id="options-link">Extension Settings</a>
+        </div>
+    </div>
+
+    <script src="onboarding.js"></script>
+</body>
+</html>

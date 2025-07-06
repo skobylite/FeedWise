@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "FeedWise",
+  "version": "1.0",
+  "description": "Transform your social media feeds into daily wisdom with Readwise highlights and Obsidian notes.",
+  "author": "yusef",
+  "icons": {
+    "16": "feedwise.png",
+    "32": "feedwise.png",
+    "48": "feedwise.png",
+    "128": "feedwise.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "webNavigation",
+    "scripting"
+  ],
+  "optional_permissions": [
+    "fileSystem"
+  ],
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.facebook.com/*", "*://*.twitter.com/*", "*://twitter.com/*", "*://*.x.com/*", "*://x.com/*", "*://*.instagram.com/*"],
+      "js": ["quotes.js", "content.js"]
+    }
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}
