@@ -415,6 +415,7 @@ const HIGHLIGHT_STYLES = `
   div[aria-label="Account switcher"]:not(.fb-blocker-container *) {
     filter: grayscale(0.3) opacity(0.8);
     transition: filter 0.3s ease, opacity 0.3s ease;
+    pointer-events: auto !important;
   }
 
   div[role="navigation"]:hover:not(.fb-blocker-container *),
@@ -429,10 +430,61 @@ const HIGHLIGHT_STYLES = `
   div[role="banner"]:not(.fb-blocker-container *) {
     filter: grayscale(0.2) opacity(0.9);
     transition: filter 0.3s ease, opacity 0.3s ease;
+    pointer-events: auto !important;
   }
 
   div[role="banner"]:hover:not(.fb-blocker-container *) {
     filter: grayscale(0) opacity(1);
+  }
+
+  /* Ensure all links and buttons within sidebar remain clickable */
+  div[role="navigation"] a:not(.fb-blocker-container *),
+  div[role="navigation"] button:not(.fb-blocker-container *),
+  div[role="navigation"] input:not(.fb-blocker-container *),
+  div[role="complementary"] a:not(.fb-blocker-container *),
+  div[role="complementary"] button:not(.fb-blocker-container *),
+  div[role="complementary"] input:not(.fb-blocker-container *),
+  div[data-pagelet="LeftRail"] a:not(.fb-blocker-container *),
+  div[data-pagelet="LeftRail"] button:not(.fb-blocker-container *),
+  div[data-pagelet="LeftRail"] input:not(.fb-blocker-container *),
+  div[data-pagelet="RightRail"] a:not(.fb-blocker-container *),
+  div[data-pagelet="RightRail"] button:not(.fb-blocker-container *),
+  div[data-pagelet="RightRail"] input:not(.fb-blocker-container *),
+  div[role="banner"] a:not(.fb-blocker-container *),
+  div[role="banner"] button:not(.fb-blocker-container *),
+  div[role="banner"] input:not(.fb-blocker-container *),
+  div[role="search"]:not(.fb-blocker-container *),
+  input[placeholder*="Search"]:not(.fb-blocker-container *),
+  input[aria-label*="Search"]:not(.fb-blocker-container *),
+  form[role="search"]:not(.fb-blocker-container *),
+  form[role="search"] *:not(.fb-blocker-container *) {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+  
+  /* Specifically ensure search inputs are clickable */
+  input[type="search"]:not(.fb-blocker-container *),
+  input[type="text"]:not(.fb-blocker-container *),
+  /* Facebook header area - ensure everything is clickable */
+  div[data-pagelet="HeaderActions"]:not(.fb-blocker-container *),
+  div[data-pagelet="HeaderActions"] *:not(.fb-blocker-container *),
+  header:not(.fb-blocker-container *),
+  header *:not(.fb-blocker-container *),
+  /* Facebook top navigation */
+  div[role="banner"] *:not(.fb-blocker-container *),
+  /* Any element in the top area */
+  body > div:first-child *:not(.fb-blocker-container *) {
+    pointer-events: auto !important;
+    cursor: text !important;
+  }
+  
+  /* Override any potential blocking on the entire header area */
+  div[data-pagelet="HeaderActions"]:not(.fb-blocker-container *),
+  header:not(.fb-blocker-container *),
+  div[role="banner"]:not(.fb-blocker-container *) {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 9999 !important;
   }
 
   /* Inline Note Styles */
@@ -855,31 +907,126 @@ class FeedWiseBlocker {
     this.displayedHighlights = [];
     this.isLoading = false;
     this.highlightsPerLoad = 5;
-    this.currentTheme = localStorage.getItem('feedwise-theme') || 'light';
+    this.currentTheme = this.detectTheme();
     this.platform = this.detectPlatform();
     this.init();
   }
 
+  detectTheme() {
+    // First check system preference
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    console.log('[WisdomFeed] System prefers dark mode:', prefersDark);
+    
+    // Check platform-specific dark mode indicators
+    const hostname = window.location.hostname;
+    let platformDark = false;
+    
+    if (hostname.includes('facebook.com')) {
+      // Facebook dark mode detection
+      platformDark = document.documentElement.getAttribute('data-color-mode') === 'dark' ||
+                    document.body.classList.contains('theme-dark') ||
+                    document.querySelector('[data-colorscheme="dark"]') !== null ||
+                    document.querySelector('body[style*="--surface-background: #18191a"]') !== null;
+    } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+      // Twitter/X dark mode detection
+      platformDark = document.documentElement.style.colorScheme === 'dark' ||
+                    document.body.classList.contains('theme-dark') ||
+                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null;
+    } else if (hostname.includes('instagram.com')) {
+      // Instagram dark mode detection
+      platformDark = document.documentElement.classList.contains('theme-dark') ||
+                    document.body.classList.contains('theme-dark') ||
+                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null;
+    }
+    
+    console.log('[WisdomFeed] Platform dark mode detected:', platformDark);
+    
+    // Use platform dark mode if detected, otherwise fall back to system preference
+    const theme = (platformDark || prefersDark) ? 'dark' : 'light';
+    console.log('[WisdomFeed] Selected theme:', theme);
+    
+    return theme;
+  }
+
   detectPlatform() {
     const hostname = window.location.hostname;
-    if (hostname.includes('facebook.com')) return 'facebook';
-    if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'twitter';
-    if (hostname.includes('instagram.com')) return 'instagram';
+    console.log('[WisdomFeed] Detecting platform for hostname:', hostname);
+    if (hostname.includes('facebook.com')) {
+      console.log('[WisdomFeed] Detected Facebook');
+      return 'facebook';
+    }
+    if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+      console.log('[WisdomFeed] Detected Twitter/X');
+      return 'twitter';
+    }
+    if (hostname.includes('instagram.com')) {
+      console.log('[WisdomFeed] Detected Instagram');
+      return 'instagram';
+    }
+    console.log('[WisdomFeed] Unknown platform');
     return 'unknown';
   }
 
   async init() {
+    console.log('[WisdomFeed] Initializing on platform:', this.platform, 'URL:', window.location.href);
+    
     // Only initialize if we're on a supported platform
-    if (this.platform === 'unknown') return;
+    if (this.platform === 'unknown') {
+      console.log('[WisdomFeed] Unknown platform, exiting');
+      return;
+    }
     
     // Check if this platform is enabled and if we should activate on this page
     const shouldActivate = await this.shouldActivateOnCurrentPage();
+    console.log('[WisdomFeed] Should activate:', shouldActivate);
     if (!shouldActivate) return;
+    
+    // Wait for DOM to be more stable on dynamic sites
+    await this.waitForPageLoad();
+    
+    // Re-detect theme after page loads (in case platform theme changed)
+    this.currentTheme = this.detectTheme();
     
     this.injectStyles();
     this.hidePlatformFeed();
     this.loadHighlights();
     this.setupInfiniteScroll();
+  }
+
+  async waitForPageLoad() {
+    // Shorter wait for dynamic content to load
+    const initialWait = this.platform === 'facebook' ? 800 : 1200; // Shorter delay for Facebook
+    await new Promise(resolve => setTimeout(resolve, initialWait));
+    
+    // Wait for specific elements based on platform
+    const maxWaits = 8;
+    let waits = 0;
+    
+    while (waits < maxWaits) {
+      let targetFound = false;
+      
+      switch (this.platform) {
+        case 'facebook':
+          targetFound = !!document.querySelector('[role="main"]');
+          break;
+        case 'twitter':
+          targetFound = !!document.querySelector('[data-testid="primaryColumn"]');
+          break;
+        case 'instagram':
+          targetFound = !!document.querySelector('main[role="main"]');
+          break;
+      }
+      
+      if (targetFound) {
+        console.log('[WisdomFeed] Target element found after', waits * 300, 'ms');
+        break;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+      waits++;
+    }
+    
+    console.log('[WisdomFeed] Finished waiting for page load after', waits * 300, 'ms');
   }
 
   async shouldActivateOnCurrentPage() {
@@ -917,8 +1064,13 @@ class FeedWiseBlocker {
         
       case 'instagram':
         // Only activate on home feed, not on individual posts, profiles, stories, etc.
-        return pathname === '/' || pathname === '' || 
-               (pathname === '/' && !url.includes('/p/') && !url.includes('/stories/') && !url.includes('/reel/') && !url.includes('/explore/') && !url.includes('/direct/'));
+        const isHomePage = pathname === '/' || pathname === '' || pathname === '/';
+        const hasNoSpecialPaths = !url.includes('/p/') && !url.includes('/stories/') && 
+                                !url.includes('/reel/') && !url.includes('/explore/') && 
+                                !url.includes('/direct/') && !url.includes('/accounts/') &&
+                                !url.includes('/profile/');
+        console.log('[WisdomFeed] Instagram check - isHomePage:', isHomePage, 'hasNoSpecialPaths:', hasNoSpecialPaths);
+        return isHomePage && hasNoSpecialPaths;
         
       default:
         return false;
@@ -943,20 +1095,73 @@ class FeedWiseBlocker {
         break;
       case 'twitter':
         feedSelectors = [
-          '[data-testid="primaryColumn"]',
+          '[data-testid="primaryColumn"] > div > div:nth-child(2)', // Feed content area
           '[aria-label="Timeline: Your Home Timeline"]',
-          'main[role="main"]',
-          'div[data-testid="primaryColumn"] > div > div:nth-child(2)' // More specific for the feed content
+          '[data-testid="primaryColumn"] section[aria-labelledby]', // Timeline section
+          'div[aria-label="Home timeline"] section',
+          '[data-testid="primaryColumn"] > div > div > section',
+          '[data-testid="primaryColumn"]',
+          'main[role="main"] > div > div > div > div:nth-child(2)'
         ];
+        
+        // Use CSS to hide the right sidebar instead of removing DOM elements
+        const twitterHideStyle = document.createElement('style');
+        twitterHideStyle.id = 'wisdomfeed-twitter-hide';
+        twitterHideStyle.textContent = `
+          /* Hide Twitter right sidebar */
+          [data-testid="sidebarColumn"] {
+            display: none !important;
+          }
+          
+          /* Hide trending sections */
+          [aria-label*="Timeline: Trending"],
+          [data-testid="trend"],
+          section[aria-labelledby*="trending"],
+          aside[aria-label*="Timeline"],
+          div[aria-label*="Timeline: Trending"] {
+            display: none !important;
+          }
+          
+          /* Hide the right column container completely */
+          main[role="main"] > div > div > div:last-child {
+            display: none !important;
+          }
+          
+          /* Adjust main layout to not leave empty space */
+          main[role="main"] > div > div {
+            grid-template-columns: 275px 1fr !important;
+          }
+          
+          /* Hide any flex-based right columns */
+          div[style*="flex-basis: 290px"],
+          div[style*="width: 290px"] {
+            display: none !important;
+          }
+        `;
+        document.head.appendChild(twitterHideStyle);
+        console.log('[WisdomFeed] Applied CSS-based Twitter sidebar hiding');
         break;
       case 'instagram':
-        feedSelectors = ['main[role="main"]'];
+        feedSelectors = [
+          'div[style*="max-width: 935px"]', // Instagram's main content wrapper
+          'section > main[role="main"]', // Main content area
+          'main[role="main"] > div', // Feed container
+          'section > main > div > div', // Feed wrapper
+          'div[style*="max-width: 470px"]', // Stories section
+          'main[role="main"]',
+          'section[role="main"]'
+        ];
         break;
     }
     
-    for (const selector of feedSelectors) {
+    console.log('[WisdomFeed] Testing selectors for', this.platform, ':', feedSelectors);
+    
+    for (let i = 0; i < feedSelectors.length; i++) {
+      const selector = feedSelectors[i];
       const feed = document.querySelector(selector);
+      console.log('[WisdomFeed] Selector', i, ':', selector, '-> Found:', !!feed, feed);
       if (feed) {
+        console.log('[WisdomFeed] Hiding feed element:', feed);
         feed.style.display = 'none';
         break;
       }
@@ -994,7 +1199,7 @@ class FeedWiseBlocker {
 
   loadDefaultQuotes() {
     this.highlights = this.shuffleArray([...defaultQuotes]);
-    this.createContainer();
+    this.createContainerWithUpload();
     this.displayNextBatch();
   }
 
@@ -1130,8 +1335,7 @@ class FeedWiseBlocker {
         feedSelectors = [
           '[data-testid="primaryColumn"]',
           '[aria-label="Timeline: Your Home Timeline"]',
-          'main[role="main"]',
-          'div[data-testid="primaryColumn"] > div > div:nth-child(2)' // More specific for the feed content
+          'main[role="main"]'
         ];
         break;
       case 'instagram':
@@ -1139,11 +1343,19 @@ class FeedWiseBlocker {
         break;
     }
     
-    for (const selector of feedSelectors) {
+    console.log('[WisdomFeed] Finding platform feed with selectors:', feedSelectors);
+    
+    for (let i = 0; i < feedSelectors.length; i++) {
+      const selector = feedSelectors[i];
       const feed = document.querySelector(selector);
-      if (feed) return feed;
+      console.log('[WisdomFeed] Feed selector', i, ':', selector, '-> Found:', !!feed, feed);
+      if (feed) {
+        console.log('[WisdomFeed] Using feed element:', feed);
+        return feed;
+      }
     }
     
+    console.log('[WisdomFeed] No feed element found!');
     return null;
   }
 
@@ -1153,7 +1365,7 @@ class FeedWiseBlocker {
 
   createContainer() {
     const feed = this.findPlatformFeed();
-    if (feed && feed.parentNode) {
+    if (feed) {
       const container = document.createElement('div');
       container.className = 'fb-blocker-container';
       
@@ -1169,9 +1381,6 @@ class FeedWiseBlocker {
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
             </button>
-            <button class="fb-blocker-theme-toggle" id="theme-toggle">
-              ${this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-            </button>
           </div>
         </div>
         <div class="fb-blocker-highlights" id="highlights-container"></div>
@@ -1180,17 +1389,58 @@ class FeedWiseBlocker {
         </div>
       `;
       
-      feed.parentNode.insertBefore(container, feed);
+      // Replace the feed content instead of hiding it
+      feed.innerHTML = '';
+      feed.appendChild(container);
       
-      // Setup theme toggle
-      document.getElementById('theme-toggle').addEventListener('click', () => {
-        this.toggleTheme();
-      });
-
       // Setup add note button
       document.getElementById('add-note-btn').addEventListener('click', () => {
         this.showAddNoteForm();
       });
+    }
+  }
+
+  createContainerWithUpload() {
+    const feed = this.findPlatformFeed();
+    if (feed && feed.parentNode) {
+      const container = document.createElement('div');
+      container.className = 'fb-blocker-container';
+      
+      container.innerHTML = `
+        <div class="fb-blocker-header">
+          <h1 class="fb-blocker-title">
+            <img src="${chrome.runtime.getURL('feedwise.png')}" class="fb-blocker-icon" alt="FeedWise">
+            WisdomFeed
+          </h1>
+          <div class="fb-blocker-header-controls">
+            <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
+              ➕ Add Note
+            </button>
+          </div>
+        </div>
+        <div class="fb-blocker-upload-zone" id="upload-zone" style="margin-bottom: 30px;">
+          <div class="fb-blocker-upload-content">
+            <div class="fb-blocker-upload-icon">📁</div>
+            <div class="fb-blocker-upload-text">Upload your Readwise CSV</div>
+            <div class="fb-blocker-upload-subtext">Drag & drop here or click to browse</div>
+          </div>
+        </div>
+        <div class="fb-blocker-upload-status" id="upload-status" style="display: none;"></div>
+        <div class="fb-blocker-highlights" id="highlights-container"></div>
+        <div class="fb-blocker-loading" id="loading-indicator" style="display: none;">
+          Loading more wisdom...
+        </div>
+      `;
+      
+      feed.parentNode.insertBefore(container, feed);
+      
+      // Setup add note button
+      document.getElementById('add-note-btn').addEventListener('click', () => {
+        this.showAddNoteForm();
+      });
+
+      // Setup drag and drop for CSV upload
+      this.setupPageDragAndDrop();
     }
   }
 
@@ -1354,16 +1604,6 @@ class FeedWiseBlocker {
     }, 100);
   }
 
-  toggleTheme() {
-    this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', this.currentTheme);
-    localStorage.setItem('feedwise-theme', this.currentTheme);
-    
-    const toggle = document.getElementById('theme-toggle');
-    if (toggle) {
-      toggle.textContent = this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
-    }
-  }
 
   showNoHighlightsMessage() {
     const feed = this.findPlatformFeed();
@@ -1383,9 +1623,6 @@ class FeedWiseBlocker {
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
             </button>
-            <button class="fb-blocker-theme-toggle" id="theme-toggle">
-              ${this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-            </button>
           </div>
         </div>
         <div class="fb-blocker-no-highlights">
@@ -1404,11 +1641,6 @@ class FeedWiseBlocker {
       
       feed.parentNode.insertBefore(container, feed);
       
-      // Setup theme toggle
-      document.getElementById('theme-toggle').addEventListener('click', () => {
-        this.toggleTheme();
-      });
-
       // Setup add note button
       document.getElementById('add-note-btn').addEventListener('click', () => {
         this.showAddNoteForm();

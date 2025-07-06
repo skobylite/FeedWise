@@ -13,9 +13,27 @@ class NewTabWisdom {
       return;
     }
 
+    this.detectAndApplyTheme();
     this.setupEventListeners();
     await this.loadContent();
     this.loadInitialWisdoms();
+  }
+
+  detectAndApplyTheme() {
+    // Check system preference for dark mode
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    console.log('[WisdomFeed NewTab] System prefers dark mode:', prefersDark);
+    
+    // Use darker schemes for dark mode preference
+    const defaultScheme = prefersDark ? '3' : '1'; // Scheme 3 is darker blue, scheme 1 is lighter
+    this.changeColorScheme(defaultScheme);
+    
+    // Update active state
+    document.querySelectorAll('.color-scheme').forEach(s => s.classList.remove('active'));
+    const activeScheme = document.querySelector(`.color-scheme[data-scheme="${defaultScheme}"]`);
+    if (activeScheme) {
+      activeScheme.classList.add('active');
+    }
   }
 
   getUserSettings() {
@@ -91,7 +109,17 @@ class NewTabWisdom {
 
   changeColorScheme(schemeNumber) {
     const body = document.body;
-    body.style.background = `linear-gradient(135deg, var(--scheme-${schemeNumber}-start) 0%, var(--scheme-${schemeNumber}-end) 100%)`;
+    const schemes = {
+      1: { start: '#2d3561', end: '#3a2c4e' },
+      2: { start: '#6b2c5f', end: '#7a2b36' },
+      3: { start: '#1e4a6b', end: '#003d4a' },
+      4: { start: '#1e4a2d', end: '#1c4a3a' }
+    };
+    
+    const scheme = schemes[schemeNumber];
+    if (scheme) {
+      body.style.background = `linear-gradient(135deg, ${scheme.start} 0%, ${scheme.end} 100%)`;
+    }
   }
 
   setupInfiniteScroll() {
