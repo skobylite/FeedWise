@@ -1219,7 +1219,7 @@ class FeedWiseBlocker {
           }
         `;
         document.head.appendChild(twitterHideStyle);
-        console.log('[WisdomFeed] Applied CSS-only Twitter modifications');
+        // console.log('[WisdomFeed] Applied CSS-only Twitter modifications');
         // console.log('[WisdomFeed DEBUG] Twitter CSS applied:', twitterHideStyle.textContent.includes('1400px'));
         break;
         

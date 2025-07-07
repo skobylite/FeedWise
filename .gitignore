@@ -1,0 +1,47 @@
+# Log files
+*.log
+Twitterlog*
+x.com-*.log
+
+# System files
+.DS_Store
+Thumbs.db
+.DS_Store?
+ehthumbs.db
+
+# Development files
+*.tmp
+*.temp
+*~
+*.bak
+
+# Build artifacts
+node_modules/
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archives
+*.zip
+*.tar.gz
+
+# Social media page dumps
+*feed.html
+Facebook*feed.html
+twitterfeed.html
+
+# Cleanup scripts (remove after use)
+cleanup-history.sh
+
+# OS generated files
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files
+*.orig
+*.rej
