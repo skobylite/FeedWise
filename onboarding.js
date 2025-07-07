@@ -135,6 +135,10 @@ class OnboardingManager {
         <h1 class="title">Your Feed, Your Rules:</h1>
         <br>
         <p class="subtitle">FeedWise is ready to transform your social media experience</p>
+        <div style="margin: 20px 0; text-align: center;">
+          <p style="margin-bottom: 10px;">Don't have Readwise? <a href="https://readwise.io/propane" target="_blank" style="color: #FF6B6B; text-decoration: none; font-weight: 500;">Get it here</a></p>
+          <p><a href="https://youtu.be/63V38hyckp8" target="_blank" style="color: #FF6B6B; text-decoration: none; font-weight: 500;">📺 Watch tutorial video</a></p>
+        </div>
         <div class="upload-section" id="upload-section" style="margin: 32px 0; padding: 24px; background: rgba(255, 255, 255, 0.08); border-radius: 16px;">
           <h3 style="margin-bottom: 16px; color: #fff;">Upload Your Highlights</h3>
           <p style="margin-bottom: 20px; color: rgba(255, 255, 255, 0.8);">Get started by uploading your Readwise highlights CSV file.</p>

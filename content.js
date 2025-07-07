@@ -950,19 +950,33 @@ class FeedWiseBlocker {
     this.displayedHighlights = [];
     this.isLoading = false;
     this.highlightsPerLoad = 5;
-    this.currentTheme = this.detectTheme();
     this.platform = this.detectPlatform();
+    this.initWithTheme();
+  }
+
+  async initWithTheme() {
+    this.currentTheme = await this.detectTheme();
     this.init();
   }
 
   detectTheme() {
-    // First check system preference
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    console.log('[WisdomFeed] System prefers dark mode:', prefersDark);
-    
-    // Check platform-specific dark mode indicators
-    const hostname = window.location.hostname;
-    let platformDark = false;
+    // First check user's stored theme preference
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['feedwiseTheme'], (data) => {
+        if (data.feedwiseTheme) {
+          // Use user's explicit theme preference
+          console.log('[WisdomFeed] User theme preference:', data.feedwiseTheme);
+          resolve(data.feedwiseTheme);
+          return;
+        }
+        
+        // Fall back to platform/system detection if no user preference
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        console.log('[WisdomFeed] System prefers dark mode:', prefersDark);
+        
+        // Check platform-specific dark mode indicators
+        const hostname = window.location.hostname;
+        let platformDark = false;
     
     if (hostname.includes('facebook.com')) {
       // Facebook dark mode detection
@@ -998,13 +1012,15 @@ class FeedWiseBlocker {
                     document.querySelector('meta[name="theme-color"][content="#000000"]') !== null);
     }
     
-    console.log('[WisdomFeed] Platform dark mode detected:', platformDark);
-    
-    // Use platform dark mode if detected, otherwise fall back to system preference
-    const theme = (platformDark || prefersDark) ? 'dark' : 'light';
-    console.log('[WisdomFeed] Selected theme:', theme);
-    
-    return theme;
+        console.log('[WisdomFeed] Platform dark mode detected:', platformDark);
+        
+        // Use platform dark mode if detected, otherwise fall back to system preference
+        const theme = (platformDark || prefersDark) ? 'dark' : 'light';
+        console.log('[WisdomFeed] Selected theme:', theme);
+        
+        resolve(theme);
+      });
+    });
   }
 
   detectPlatform() {

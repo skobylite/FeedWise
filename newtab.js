@@ -20,20 +20,31 @@ class NewTabWisdom {
   }
 
   detectAndApplyTheme() {
-    // Check system preference for dark mode
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    console.log('[WisdomFeed NewTab] System prefers dark mode:', prefersDark);
-    
-    // Use darker schemes for dark mode preference
-    const defaultScheme = prefersDark ? '3' : '1'; // Scheme 3 is darker blue, scheme 1 is lighter
-    this.changeColorScheme(defaultScheme);
-    
-    // Update active state
-    document.querySelectorAll('.color-scheme').forEach(s => s.classList.remove('active'));
-    const activeScheme = document.querySelector(`.color-scheme[data-scheme="${defaultScheme}"]`);
-    if (activeScheme) {
-      activeScheme.classList.add('active');
-    }
+    // First check user's stored theme preference
+    chrome.storage.local.get(['feedwiseTheme'], (data) => {
+      let prefersDark;
+      
+      if (data.feedwiseTheme) {
+        // Use user's explicit theme preference
+        prefersDark = data.feedwiseTheme === 'dark';
+        console.log('[WisdomFeed NewTab] User theme preference:', data.feedwiseTheme);
+      } else {
+        // Fall back to system preference if no user preference
+        prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        console.log('[WisdomFeed NewTab] System prefers dark mode:', prefersDark);
+      }
+      
+      // Use darker schemes for dark mode preference
+      const defaultScheme = prefersDark ? '3' : '1'; // Scheme 3 is darker blue, scheme 1 is lighter
+      this.changeColorScheme(defaultScheme);
+      
+      // Update active state
+      document.querySelectorAll('.color-scheme').forEach(s => s.classList.remove('active'));
+      const activeScheme = document.querySelector(`.color-scheme[data-scheme="${defaultScheme}"]`);
+      if (activeScheme) {
+        activeScheme.classList.add('active');
+      }
+    });
   }
 
   getUserSettings() {

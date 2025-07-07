@@ -1,16 +1,24 @@
 class OptionsManager {
   constructor() {
-    this.currentTheme = localStorage.getItem('feedwise-theme') || 'light';
+    this.currentTheme = 'light'; // Default
     this.init();
   }
 
   init() {
-    this.setupTheme();
+    this.loadTheme();
     this.setupSettings();
     this.setupFileUpload();
     this.setupDragAndDrop();
     this.setupObsidianSection();
     this.loadCurrentStats();
+  }
+
+  loadTheme() {
+    // Load theme from chrome.storage
+    chrome.storage.local.get(['feedwiseTheme'], (data) => {
+      this.currentTheme = data.feedwiseTheme || 'light';
+      this.setupTheme();
+    });
   }
 
   setupTheme() {
@@ -21,7 +29,12 @@ class OptionsManager {
     themeToggle.addEventListener('click', () => {
       this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', this.currentTheme);
-      localStorage.setItem('feedwise-theme', this.currentTheme);
+      
+      // Save to chrome.storage instead of localStorage
+      chrome.storage.local.set({ feedwiseTheme: this.currentTheme }, () => {
+        console.log('[FeedWise] Theme saved:', this.currentTheme);
+      });
+      
       themeToggle.textContent = this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
     });
   }
