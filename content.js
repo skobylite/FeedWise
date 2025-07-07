@@ -37,6 +37,8 @@ const HIGHLIGHT_STYLES = `
     padding: 20px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     transition: background-color var(--transition-medium), color var(--transition-medium);
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .fb-blocker-header {
@@ -106,6 +108,27 @@ const HIGHLIGHT_STYLES = `
     border-color: #1e7e34;
   }
 
+  .fb-blocker-exit-btn {
+    background: #dc3545;
+    border: 2px solid #dc3545;
+    border-radius: 50px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 14px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  .fb-blocker-exit-btn:hover {
+    background: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-1px);
+  }
+
   .fb-blocker-theme-toggle {
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
@@ -135,8 +158,10 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-highlights {
-    max-width: 800px;
+    max-width: 780px;
     margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .fb-blocker-highlight {
@@ -946,15 +971,31 @@ class FeedWiseBlocker {
                     document.querySelector('[data-colorscheme="dark"]') !== null ||
                     document.querySelector('body[style*="--surface-background: #18191a"]') !== null;
     } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
-      // Twitter/X dark mode detection
-      platformDark = document.documentElement.style.colorScheme === 'dark' ||
-                    document.body.classList.contains('theme-dark') ||
-                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null;
+      // Twitter/X dark mode detection - check actual background colors
+      const bodyStyle = window.getComputedStyle(document.body);
+      const backgroundColor = bodyStyle.backgroundColor;
+      // Twitter light mode is usually white (rgb(255, 255, 255))
+      const isLightBackground = backgroundColor.includes('rgb(255, 255, 255)') || 
+                               backgroundColor.includes('rgba(255, 255, 255');
+      platformDark = !isLightBackground && (
+                    backgroundColor.includes('rgb(0, 0, 0)') || 
+                    backgroundColor.includes('rgb(21, 32, 43)') ||
+                    backgroundColor.includes('rgb(15, 20, 25)') ||
+                    document.documentElement.style.colorScheme === 'dark' ||
+                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null);
     } else if (hostname.includes('instagram.com')) {
-      // Instagram dark mode detection
-      platformDark = document.documentElement.classList.contains('theme-dark') ||
-                    document.body.classList.contains('theme-dark') ||
-                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null;
+      // Instagram dark mode detection - check actual background colors
+      const bodyStyle = window.getComputedStyle(document.body);
+      const backgroundColor = bodyStyle.backgroundColor;
+      // Instagram light mode is usually white (rgb(255, 255, 255))
+      const isLightBackground = backgroundColor.includes('rgb(255, 255, 255)') || 
+                               backgroundColor.includes('rgba(255, 255, 255');
+      platformDark = !isLightBackground && (
+                    backgroundColor.includes('rgb(0, 0, 0)') || 
+                    backgroundColor.includes('rgb(18, 18, 18)') ||
+                    backgroundColor.includes('rgb(38, 38, 38)') ||
+                    document.documentElement.classList.contains('theme-dark') ||
+                    document.querySelector('meta[name="theme-color"][content="#000000"]') !== null);
     }
     
     console.log('[WisdomFeed] Platform dark mode detected:', platformDark);
@@ -1123,7 +1164,7 @@ class FeedWiseBlocker {
         const twitterHideStyle = document.createElement('style');
         twitterHideStyle.id = 'wisdomfeed-twitter-hide';
         twitterHideStyle.textContent = `
-          /* Hide Twitter right sidebar */
+          /* Hide Twitter right sidebar completely */
           [data-testid="sidebarColumn"] {
             display: none !important;
           }
@@ -1137,6 +1178,11 @@ class FeedWiseBlocker {
             display: none !important;
           }
           
+          /* Hide the main feed content behind overlay */
+          [data-testid="primaryColumn"] > div > div {
+            visibility: hidden !important;
+          }
+          
           /* Adjust main layout to not leave empty space */
           main[role="main"] > div > div {
             grid-template-columns: 275px 1fr !important;
@@ -1144,12 +1190,37 @@ class FeedWiseBlocker {
           
           /* Hide any flex-based right columns */
           div[style*="flex-basis: 290px"],
-          div[style*="width: 290px"] {
+          div[style*="width: 290px"],
+          div[style*="flex-basis: 350px"] {
             display: none !important;
+          }
+          
+          /* Make sure our overlay covers everything */
+          #wisdomfeed-overlay {
+            z-index: 9999 !important;
+          }
+          
+          /* Twitter-specific wider layout */
+          #wisdomfeed-overlay .fb-blocker-highlights {
+            max-width: 1200px !important;
+            width: calc(100vw - 360px) !important;
+            padding: 0 20px !important;
+            margin: 0 auto !important;
+          }
+          
+          #wisdomfeed-overlay .fb-blocker-container {
+            padding: 20px 30px 20px 50px !important;
+            width: 100% !important;
+          }
+          
+          #wisdomfeed-overlay .fb-blocker-highlight {
+            max-width: none !important;
+            width: 100% !important;
           }
         `;
         document.head.appendChild(twitterHideStyle);
         console.log('[WisdomFeed] Applied CSS-only Twitter modifications');
+        // console.log('[WisdomFeed DEBUG] Twitter CSS applied:', twitterHideStyle.textContent.includes('1400px'));
         break;
         
       case 'instagram':
@@ -1174,9 +1245,12 @@ class FeedWiseBlocker {
   }
 
   loadHighlights() {
+    // console.log('[WisdomFeed DEBUG] Loading highlights...');
     chrome.storage.local.get(['highlights', 'obsidianNotes'], (data) => {
       const highlights = data.highlights || [];
       const notes = data.obsidianNotes || [];
+      
+      // console.log('[WisdomFeed DEBUG] Found highlights:', highlights.length, 'notes:', notes.length);
       
       if (highlights.length > 0 || notes.length > 0) {
         // Group highlights before shuffling to preserve context
@@ -1193,17 +1267,21 @@ class FeedWiseBlocker {
         // Mix notes into highlights with some spacing
         const mixedContent = this.mixNotesWithHighlights(groupedHighlights, noteHighlights);
         this.highlights = this.shuffleArray([...mixedContent]);
+        // console.log('[WisdomFeed DEBUG] Using user content, creating container...');
         this.createContainer();
         this.displayNextBatch();
       } else {
         // Show default quotes for new users
+        // console.log('[WisdomFeed DEBUG] No user content, loading default quotes...');
         this.loadDefaultQuotes();
       }
     });
   }
 
   loadDefaultQuotes() {
+    // console.log('[WisdomFeed DEBUG] Loading default quotes for new users');
     this.highlights = this.shuffleArray([...defaultQuotes]);
+    // console.log('[WisdomFeed DEBUG] Creating container with upload for default content...');
     this.createContainerWithUpload();
     this.displayNextBatch();
   }
@@ -1377,16 +1455,26 @@ class FeedWiseBlocker {
       // For Twitter, use overlay approach to avoid breaking React
       if (this.platform === 'twitter') {
         container.style.cssText = `
-          position: absolute;
+          position: fixed;
           top: 0;
-          left: 0;
+          left: 320px;
           right: 0;
           bottom: 0;
-          z-index: 1000;
+          z-index: 9999;
           background: var(--bg-primary);
           overflow-y: auto;
+          width: calc(100vw - 320px);
+          height: 100vh;
+          margin: 0;
+          padding: 0;
         `;
-        feed.style.position = 'relative';
+        
+        // Debug logging for Twitter width
+        // console.log('[WisdomFeed DEBUG] Twitter container created');
+        // console.log('[WisdomFeed DEBUG] Viewport width:', window.innerWidth);
+        // console.log('[WisdomFeed DEBUG] Calculated container width:', window.innerWidth - 260);
+        // console.log('[WisdomFeed DEBUG] Container actual width:', container.offsetWidth);
+        // console.log('[WisdomFeed DEBUG] Container computed style:', window.getComputedStyle(container).width);
       }
       
       const platformName = this.platform.charAt(0).toUpperCase() + this.platform.slice(1);
@@ -1401,6 +1489,9 @@ class FeedWiseBlocker {
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
             </button>
+            <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
+              ✕
+            </button>
           </div>
         </div>
         <div class="fb-blocker-highlights" id="highlights-container"></div>
@@ -1411,8 +1502,8 @@ class FeedWiseBlocker {
       
       // Use different insertion methods based on platform
       if (this.platform === 'twitter') {
-        // Overlay approach for Twitter - don't destroy existing DOM
-        feed.appendChild(container);
+        // Fixed overlay for Twitter - append to body for full coverage
+        document.body.appendChild(container);
       } else {
         // Replacement approach for Facebook/Instagram
         feed.innerHTML = '';
@@ -1423,6 +1514,31 @@ class FeedWiseBlocker {
       document.getElementById('add-note-btn').addEventListener('click', () => {
         this.showAddNoteForm();
       });
+
+      // Setup exit button
+      document.getElementById('exit-btn').addEventListener('click', () => {
+        this.showExitConfirmation();
+      });
+      
+      // Debug logging for highlights container on Twitter
+      // if (this.platform === 'twitter') {
+      //   setTimeout(() => {
+      //     const highlightsContainer = document.getElementById('highlights-container');
+      //     if (highlightsContainer) {
+      //       console.log('[WisdomFeed DEBUG] Highlights container found');
+      //       console.log('[WisdomFeed DEBUG] Highlights container width:', highlightsContainer.offsetWidth);
+      //       console.log('[WisdomFeed DEBUG] Highlights container computed style:', window.getComputedStyle(highlightsContainer).width);
+      //       console.log('[WisdomFeed DEBUG] Highlights container max-width:', window.getComputedStyle(highlightsContainer).maxWidth);
+      //       console.log('[WisdomFeed DEBUG] Highlights container padding:', window.getComputedStyle(highlightsContainer).padding);
+      //       
+      //       const firstHighlight = highlightsContainer.querySelector('.fb-blocker-highlight');
+      //       if (firstHighlight) {
+      //         console.log('[WisdomFeed DEBUG] First highlight width:', firstHighlight.offsetWidth);
+      //         console.log('[WisdomFeed DEBUG] First highlight computed style:', window.getComputedStyle(firstHighlight).width);
+      //       }
+      //     }
+      //   }, 1000);
+      // }
     }
   }
 
@@ -1431,6 +1547,32 @@ class FeedWiseBlocker {
     if (feed && feed.parentNode) {
       const container = document.createElement('div');
       container.className = 'fb-blocker-container';
+      container.id = 'wisdomfeed-overlay';
+      
+      // For Twitter, use overlay approach to avoid breaking React
+      if (this.platform === 'twitter') {
+        container.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 320px;
+          right: 0;
+          bottom: 0;
+          z-index: 9999;
+          background: var(--bg-primary);
+          overflow-y: auto;
+          width: calc(100vw - 320px);
+          height: 100vh;
+          margin: 0;
+          padding: 0;
+        `;
+        
+        // Debug logging for Twitter width
+        // console.log('[WisdomFeed DEBUG] Twitter container with upload created');
+        // console.log('[WisdomFeed DEBUG] Viewport width:', window.innerWidth);
+        // console.log('[WisdomFeed DEBUG] Calculated container width:', window.innerWidth - 260);
+        // console.log('[WisdomFeed DEBUG] Container actual width:', container.offsetWidth);
+        // console.log('[WisdomFeed DEBUG] Container computed style:', window.getComputedStyle(container).width);
+      }
       
       container.innerHTML = `
         <div class="fb-blocker-header">
@@ -1441,6 +1583,9 @@ class FeedWiseBlocker {
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
+            </button>
+            <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
+              ✕
             </button>
           </div>
         </div>
@@ -1458,12 +1603,38 @@ class FeedWiseBlocker {
         </div>
       `;
       
-      feed.parentNode.insertBefore(container, feed);
+      // Use different insertion methods based on platform
+      if (this.platform === 'twitter') {
+        // Fixed overlay for Twitter - append to body for full coverage
+        document.body.appendChild(container);
+      } else {
+        // Insert before approach for Facebook/Instagram
+        feed.parentNode.insertBefore(container, feed);
+      }
       
       // Setup add note button
       document.getElementById('add-note-btn').addEventListener('click', () => {
         this.showAddNoteForm();
       });
+
+      // Setup exit button
+      document.getElementById('exit-btn').addEventListener('click', () => {
+        this.showExitConfirmation();
+      });
+
+      // Debug logging for highlights container on Twitter
+      // if (this.platform === 'twitter') {
+      //   setTimeout(() => {
+      //     const highlightsContainer = document.getElementById('highlights-container');
+      //     if (highlightsContainer) {
+      //       console.log('[WisdomFeed DEBUG] Upload highlights container found');
+      //       console.log('[WisdomFeed DEBUG] Upload highlights container width:', highlightsContainer.offsetWidth);
+      //       console.log('[WisdomFeed DEBUG] Upload highlights container computed style:', window.getComputedStyle(highlightsContainer).width);
+      //       console.log('[WisdomFeed DEBUG] Upload highlights container max-width:', window.getComputedStyle(highlightsContainer).maxWidth);
+      //       console.log('[WisdomFeed DEBUG] Upload highlights container padding:', window.getComputedStyle(highlightsContainer).padding);
+      //     }
+      //   }, 1000);
+      // }
 
       // Setup drag and drop for CSV upload
       this.setupPageDragAndDrop();
@@ -1649,6 +1820,9 @@ class FeedWiseBlocker {
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
             </button>
+            <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
+              ✕
+            </button>
           </div>
         </div>
         <div class="fb-blocker-no-highlights">
@@ -1670,6 +1844,11 @@ class FeedWiseBlocker {
       // Setup add note button
       document.getElementById('add-note-btn').addEventListener('click', () => {
         this.showAddNoteForm();
+      });
+
+      // Setup exit button
+      document.getElementById('exit-btn').addEventListener('click', () => {
+        this.showExitConfirmation();
       });
 
       // Setup drag and drop for CSV upload
@@ -2106,6 +2285,127 @@ class FeedWiseBlocker {
   showNoteStatus(message, type) {
     // Reuse the existing status message system
     this.showUploadStatus(message, type);
+  }
+
+  showExitConfirmation() {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'wisdomfeed-exit-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    `;
+
+    // Create modal content
+    modal.innerHTML = `
+      <div style="
+        background: var(--bg-primary);
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+      ">
+        <h2 style="margin: 0 0 20px 0; font-size: 1.5rem;">Go back to the brainrot?</h2>
+        <p style="margin: 0 0 30px 0; color: var(--text-secondary);">
+          Are you sure?
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button id="exit-yes" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+          ">Yes</button>
+          <button id="exit-no" style="
+            background: var(--text-accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+          ">No</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Setup event handlers
+    document.getElementById('exit-yes').addEventListener('click', () => {
+      this.exitWisdomFeed();
+    });
+
+    document.getElementById('exit-no').addEventListener('click', () => {
+      modal.remove();
+    });
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    // Close on escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+
+  exitWisdomFeed() {
+    // Remove the WisdomFeed overlay
+    const overlay = document.getElementById('wisdomfeed-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+
+    // Remove the injected CSS
+    const styleElement = document.getElementById('wisdomfeed-twitter-hide');
+    if (styleElement) {
+      styleElement.remove();
+    }
+
+    // For Twitter, we need to restore visibility
+    if (this.platform === 'twitter') {
+      const primaryColumn = document.querySelector('[data-testid="primaryColumn"]');
+      if (primaryColumn) {
+        const children = primaryColumn.querySelectorAll('*');
+        children.forEach(child => {
+          if (child.style.visibility === 'hidden') {
+            child.style.visibility = 'visible';
+          }
+        });
+      }
+    }
+
+    // Remove modal
+    const modal = document.getElementById('wisdomfeed-exit-modal');
+    if (modal) {
+      modal.remove();
+    }
+
+    console.log('[WisdomFeed] User returned to original feed');
   }
 }
 
