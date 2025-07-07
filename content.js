@@ -1489,7 +1489,7 @@ class FeedWiseBlocker {
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
             </button>
-            <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
+            <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to ragebait & brainrot?">
               ✕
             </button>
           </div>
