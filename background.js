@@ -1,14 +1,15 @@
 // Handle navigation updates for all supported platforms
-chrome.webNavigation.onHistoryStateUpdated.addListener(function(details) {
-  const supportedPlatforms = ['facebook.com', 'twitter.com', 'x.com', 'instagram.com'];
-  
-  if (details.url && supportedPlatforms.some(platform => details.url.includes(platform))) {
-    chrome.scripting.executeScript({
-      target: { tabId: details.tabId },
-      files: ["content.js"]
-    });
-  }
-});
+// DISABLED: This was causing repetitive script injection and console logs
+// chrome.webNavigation.onHistoryStateUpdated.addListener(function(details) {
+//   const supportedPlatforms = ['facebook.com', 'twitter.com', 'x.com', 'instagram.com'];
+//   
+//   if (details.url && supportedPlatforms.some(platform => details.url.includes(platform))) {
+//     chrome.scripting.executeScript({
+//       target: { tabId: details.tabId },
+//       files: ["content.js"]
+//     });
+//   }
+// });
 
 // Handle extension installation - show onboarding
 chrome.runtime.onInstalled.addListener((details) => {

@@ -903,6 +903,13 @@ const HIGHLIGHT_STYLES = `
 
 class FeedWiseBlocker {
   constructor() {
+    // Prevent multiple instances of the script from running
+    if (window.feedWiseBlockerInstance) {
+      console.log('[WisdomFeed] Script already running, skipping initialization');
+      return;
+    }
+    window.feedWiseBlockerInstance = this;
+    
     this.highlights = [];
     this.displayedHighlights = [];
     this.isLoading = false;
@@ -1139,7 +1146,7 @@ class FeedWiseBlocker {
           }
         `;
         document.head.appendChild(twitterHideStyle);
-        console.log('[WisdomFeed] Applied CSS-based Twitter sidebar hiding');
+        // console.log('[WisdomFeed] Applied CSS-based Twitter sidebar hiding'); // Disabled to reduce console noise
         break;
       case 'instagram':
         feedSelectors = [
@@ -2083,5 +2090,9 @@ class FeedWiseBlocker {
   }
 }
 
-// Initialize the extension
-new FeedWiseBlocker();
+// Initialize the extension only if not already running
+if (!window.feedWiseBlockerInstance) {
+  new FeedWiseBlocker();
+} else {
+  console.log('[WisdomFeed] Extension already initialized, skipping');
+}
