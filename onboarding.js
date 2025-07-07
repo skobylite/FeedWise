@@ -133,8 +133,47 @@ class OnboardingManager {
       container.innerHTML = `
         <div class="logo" style="font-size: 5rem;">📤️</div>
         <h1 class="title">Your Feed, Your Rules:</h1>
+        <br>
         <p class="subtitle">FeedWise is ready to transform your social media experience</p>
-        
+        <div class="upload-section" id="upload-section" style="margin: 32px 0; padding: 24px; background: rgba(255, 255, 255, 0.08); border-radius: 16px;">
+          <h3 style="margin-bottom: 16px; color: #fff;">Upload Your Highlights</h3>
+          <p style="margin-bottom: 20px; color: rgba(255, 255, 255, 0.8);">Get started by uploading your Readwise highlights CSV file.</p>
+          <div class="file-input-wrapper" style="margin-bottom: 20px;">
+            <input type="file" id="csvFile" accept=".csv" class="file-input" style="display: none;">
+            <label for="csvFile" class="file-input-label" id="file-label" style="
+              display: block;
+              padding: 16px 24px;
+              background: rgba(255, 255, 255, 0.1);
+              border: 2px dashed rgba(255, 255, 255, 0.3);
+              border-radius: 12px;
+              cursor: pointer;
+              text-align: center;
+              color: #fff;
+              font-size: 0.95rem;
+              transition: all 0.3s ease;
+              min-height: 60px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              📁 Choose CSV file or drag & drop
+            </label>
+          </div>
+          <button id="upload" class="upload-button" disabled style="
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+          ">Upload Highlights</button>
+        </div>
+        <br>
         <div style="background: rgba(255, 255, 255, 0.08); padding: 24px; border-radius: 16px; margin: 32px 0;">
           <h3 style="margin-bottom: 16px;">Quick Start:</h3>
           <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
@@ -145,22 +184,119 @@ class OnboardingManager {
           </div>
         </div>
 
-        <div class="actions">
-          <a href="chrome-extension://${chrome.runtime.id}/options.html" class="btn btn-primary">Upload Content</a>
-        </div>
       `;
 
       container.style.transform = 'scale(1)';
       container.style.opacity = '1';
       container.style.transition = 'all 0.5s ease';
 
-      // Auto-close after delay if user doesn't interact
-      setTimeout(() => {
-        if (document.visibilityState === 'visible') {
-          window.close();
-        }
-      }, 8000);
+      // Setup CSV upload functionality
+      this.setupCSVUpload();
+
+      // Auto-close removed - let users take their time
     }, 300);
+  }
+
+  setupCSVUpload() {
+    const csvFile = document.getElementById('csvFile');
+    const fileLabel = document.getElementById('file-label');
+    const uploadButton = document.getElementById('upload');
+
+    if (!csvFile || !fileLabel || !uploadButton) return;
+
+    const handleFile = (file) => {
+      if (file && file.type === 'text/csv') {
+        fileLabel.textContent = `📁 ${file.name}`;
+        fileLabel.style.background = 'rgba(255, 255, 255, 0.15)';
+        fileLabel.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+        uploadButton.disabled = false;
+        uploadButton.style.opacity = '1';
+        uploadButton.style.cursor = 'pointer';
+        csvFile.files = createFileList(file);
+      }
+    };
+
+    const createFileList = (file) => {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      return dt.files;
+    };
+
+    // File input change event
+    csvFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      handleFile(file);
+    });
+
+    // Drag and drop events on the label
+    fileLabel.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileLabel.style.background = 'rgba(255, 255, 255, 0.2)';
+      fileLabel.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+    });
+
+    fileLabel.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileLabel.style.background = 'rgba(255, 255, 255, 0.1)';
+      fileLabel.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+    });
+
+    fileLabel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileLabel.style.background = 'rgba(255, 255, 255, 0.1)';
+      fileLabel.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // Global drag and drop events
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    uploadButton.addEventListener('click', () => {
+      const file = csvFile.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const csvData = e.target.result;
+        
+        // Store the CSV data
+        chrome.storage.local.set({ 
+          readwiseData: csvData,
+          readwiseImportedAt: new Date().toISOString()
+        }, () => {
+          // Show success message
+          uploadButton.textContent = '✅ Uploaded Successfully!';
+          uploadButton.disabled = true;
+          
+          // Auto-close after successful upload
+          setTimeout(() => {
+            window.close();
+          }, 2000);
+        });
+      };
+      
+      reader.readAsText(file);
+    });
   }
 
   // Analytics/tracking for improvement (privacy-friendly)

@@ -123,6 +123,17 @@ const HIGHLIGHT_STYLES = `
     transform: translateY(-1px);
   }
 
+  .fb-blocker-upload-zone-active {
+    border-color: var(--text-accent) !important;
+    background: var(--bg-highlight) !important;
+    transform: scale(1.02) !important;
+  }
+
+  .fb-blocker-drag-active .fb-blocker-upload-zone {
+    border-color: var(--text-accent) !important;
+    background: var(--bg-highlight) !important;
+  }
+
   .fb-blocker-highlights {
     max-width: 800px;
     margin: 0 auto;
@@ -1094,24 +1105,21 @@ class FeedWiseBlocker {
   }
 
   hidePlatformFeed() {
-    let feedSelectors = [];
-    
     switch (this.platform) {
       case 'facebook':
-        feedSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
+        const fbSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
+        for (const selector of fbSelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            element.style.display = 'none';
+            break;
+          }
+        }
         break;
-      case 'twitter':
-        feedSelectors = [
-          '[data-testid="primaryColumn"] > div > div:nth-child(2)', // Feed content area
-          '[aria-label="Timeline: Your Home Timeline"]',
-          '[data-testid="primaryColumn"] section[aria-labelledby]', // Timeline section
-          'div[aria-label="Home timeline"] section',
-          '[data-testid="primaryColumn"] > div > div > section',
-          '[data-testid="primaryColumn"]',
-          'main[role="main"] > div > div > div > div:nth-child(2)'
-        ];
         
-        // Use CSS to hide the right sidebar instead of removing DOM elements
+      case 'twitter':
+        // For Twitter, only hide sidebar and apply minimal CSS changes
+        // Don't hide the main feed - we'll overlay it instead
         const twitterHideStyle = document.createElement('style');
         twitterHideStyle.id = 'wisdomfeed-twitter-hide';
         twitterHideStyle.textContent = `
@@ -1129,11 +1137,6 @@ class FeedWiseBlocker {
             display: none !important;
           }
           
-          /* Hide the right column container completely */
-          main[role="main"] > div > div > div:last-child {
-            display: none !important;
-          }
-          
           /* Adjust main layout to not leave empty space */
           main[role="main"] > div > div {
             grid-template-columns: 275px 1fr !important;
@@ -1146,32 +1149,27 @@ class FeedWiseBlocker {
           }
         `;
         document.head.appendChild(twitterHideStyle);
-        // console.log('[WisdomFeed] Applied CSS-based Twitter sidebar hiding'); // Disabled to reduce console noise
+        console.log('[WisdomFeed] Applied CSS-only Twitter modifications');
         break;
+        
       case 'instagram':
-        feedSelectors = [
-          'div[style*="max-width: 935px"]', // Instagram's main content wrapper
-          'section > main[role="main"]', // Main content area
-          'main[role="main"] > div', // Feed container
-          'section > main > div > div', // Feed wrapper
-          'div[style*="max-width: 470px"]', // Stories section
+        const igSelectors = [
+          'div[style*="max-width: 935px"]',
+          'section > main[role="main"]',
+          'main[role="main"] > div',
+          'section > main > div > div',
+          'div[style*="max-width: 470px"]',
           'main[role="main"]',
           'section[role="main"]'
         ];
+        for (const selector of igSelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            element.style.display = 'none';
+            break;
+          }
+        }
         break;
-    }
-    
-    console.log('[WisdomFeed] Testing selectors for', this.platform, ':', feedSelectors);
-    
-    for (let i = 0; i < feedSelectors.length; i++) {
-      const selector = feedSelectors[i];
-      const feed = document.querySelector(selector);
-      console.log('[WisdomFeed] Selector', i, ':', selector, '-> Found:', !!feed, feed);
-      if (feed) {
-        console.log('[WisdomFeed] Hiding feed element:', feed);
-        feed.style.display = 'none';
-        break;
-      }
     }
   }
 
@@ -1341,7 +1339,6 @@ class FeedWiseBlocker {
       case 'twitter':
         feedSelectors = [
           '[data-testid="primaryColumn"]',
-          '[aria-label="Timeline: Your Home Timeline"]',
           'main[role="main"]'
         ];
         break;
@@ -1375,13 +1372,29 @@ class FeedWiseBlocker {
     if (feed) {
       const container = document.createElement('div');
       container.className = 'fb-blocker-container';
+      container.id = 'wisdomfeed-overlay';
+      
+      // For Twitter, use overlay approach to avoid breaking React
+      if (this.platform === 'twitter') {
+        container.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 1000;
+          background: var(--bg-primary);
+          overflow-y: auto;
+        `;
+        feed.style.position = 'relative';
+      }
       
       const platformName = this.platform.charAt(0).toUpperCase() + this.platform.slice(1);
       
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <img src="${chrome.runtime.getURL('feedwise.png')}" class="fb-blocker-icon" alt="FeedWise">
+            <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
           <div class="fb-blocker-header-controls">
@@ -1396,9 +1409,15 @@ class FeedWiseBlocker {
         </div>
       `;
       
-      // Replace the feed content instead of hiding it
-      feed.innerHTML = '';
-      feed.appendChild(container);
+      // Use different insertion methods based on platform
+      if (this.platform === 'twitter') {
+        // Overlay approach for Twitter - don't destroy existing DOM
+        feed.appendChild(container);
+      } else {
+        // Replacement approach for Facebook/Instagram
+        feed.innerHTML = '';
+        feed.appendChild(container);
+      }
       
       // Setup add note button
       document.getElementById('add-note-btn').addEventListener('click', () => {
@@ -1416,7 +1435,7 @@ class FeedWiseBlocker {
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <img src="${chrome.runtime.getURL('feedwise.png')}" class="fb-blocker-icon" alt="FeedWise">
+            <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
           <div class="fb-blocker-header-controls">
@@ -1425,11 +1444,11 @@ class FeedWiseBlocker {
             </button>
           </div>
         </div>
-        <div class="fb-blocker-upload-zone" id="upload-zone" style="margin-bottom: 30px;">
+        <div class="fb-blocker-upload-zone" id="upload-zone" style="margin-bottom: 30px; background: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
           <div class="fb-blocker-upload-content">
-            <div class="fb-blocker-upload-icon">📁</div>
-            <div class="fb-blocker-upload-text">Upload your Readwise CSV</div>
-            <div class="fb-blocker-upload-subtext">Drag & drop here or click to browse</div>
+            <div class="fb-blocker-upload-icon" style="font-size: 48px; margin-bottom: 16px;">📁</div>
+            <div class="fb-blocker-upload-text" style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Upload your Readwise CSV</div>
+            <div class="fb-blocker-upload-subtext" style="color: var(--text-secondary); font-size: 14px;">Drag & drop here or click to browse</div>
           </div>
         </div>
         <div class="fb-blocker-upload-status" id="upload-status" style="display: none;"></div>
@@ -1623,7 +1642,7 @@ class FeedWiseBlocker {
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <img src="${chrome.runtime.getURL('feedwise.png')}" class="fb-blocker-icon" alt="FeedWise">
+            <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
           <div class="fb-blocker-header-controls">
