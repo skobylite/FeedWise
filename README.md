@@ -1,5 +1,5 @@
 
-# WisdomFeed
+# FeedWise: Reclaim your feed.
 
 Transform your Facebook feed into daily wisdom with Readwise highlights, Obsidian notes, and mindful content consumption.
 
@@ -7,7 +7,7 @@ Transform your Facebook feed into daily wisdom with Readwise highlights, Obsidia
 
 - **Readwise Integration**: Display your highlights with smart grouping and context preservation
 - **Obsidian Notes**: Random note viewer with beautiful markdown rendering
-- **Beautiful Design**: Dark/light themes, gradient colors, and smooth animations
+- **Clean Design**: Dark/light themes, gradient colors, and smooth animations
 - **Drag & Drop Upload**: Easy CSV upload directly on Facebook
 - **Infinite Scroll**: Seamless browsing of your wisdom content
 

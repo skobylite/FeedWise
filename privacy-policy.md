@@ -8,7 +8,7 @@ FeedWise is a browser extension that transforms your social media feeds into cur
 
 ## Data Collection and Storage
 
-### What Data We Collect
+### What Data Is Collected
 - **Readwise Highlights**: CSV files you voluntarily upload containing your book highlights
 - **Obsidian Notes**: Markdown files you voluntarily upload or manually enter
 - **Extension Settings**: Your preferences for themes, new tab behavior, and platform settings
@@ -130,7 +130,7 @@ To completely remove all data:
 
 ## Children's Privacy
 
-FeedWise does not knowingly collect data from children under 13. The extension is designed for users who have existing Readwise accounts and personal note collections.
+FeedWise does not knowingly collect data from children under 13. The extension is designed for adult users who have existing Readwise accounts and personal note collections.
 
 ## Data Security
 

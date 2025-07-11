@@ -16,6 +16,9 @@
     "webNavigation",
     "scripting"
   ],
+  "host_permissions": [
+    "https://readwise.io/*"
+  ],
   "optional_permissions": [
     "fileSystem"
   ],

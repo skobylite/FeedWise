@@ -71,6 +71,35 @@ const HIGHLIGHT_STYLES = `
     align-items: center;
   }
 
+  .fb-blocker-gamification {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .fb-blocker-brain-cells {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: var(--shadow-light);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .fb-blocker-brain-cells:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-medium);
+  }
+
+  #brain-cells-count {
+    transition: transform 0.2s ease;
+  }
+
   .fb-blocker-add-note-btn {
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
@@ -951,6 +980,9 @@ class FeedWiseBlocker {
     this.isLoading = false;
     this.highlightsPerLoad = 5;
     this.platform = this.detectPlatform();
+    this.sessionStartTime = Date.now();
+    this.highlightsViewed = 0;
+    this.setupPageVisibilityTracking();
     this.initWithTheme();
   }
 
@@ -1056,6 +1088,9 @@ class FeedWiseBlocker {
     console.log('[WisdomFeed] Should activate:', shouldActivate);
     if (!shouldActivate) return;
     
+    // Track blocking session start
+    this.trackBlockingSession();
+    
     // Wait for DOM to be more stable on dynamic sites
     await this.waitForPageLoad();
     
@@ -1068,10 +1103,211 @@ class FeedWiseBlocker {
     this.setupInfiniteScroll();
   }
 
+  // Gamification Analytics Methods
+  trackBlockingSession() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      // Track daily blocking sessions
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: new Set()
+        };
+      }
+      
+      // Ensure platformsBlocked is a Set (convert from array if needed)
+      if (!(analytics.dailyStats[today].platformsBlocked instanceof Set)) {
+        analytics.dailyStats[today].platformsBlocked = new Set(analytics.dailyStats[today].platformsBlocked || []);
+      }
+      
+      analytics.dailyStats[today].sessions++;
+      analytics.dailyStats[today].platformsBlocked.add(this.platform);
+      analytics.totalSessions++;
+      analytics.platformStats[this.platform] = (analytics.platformStats[this.platform] || 0) + 1;
+      analytics.lastActiveDate = new Date().toISOString();
+      
+      // Convert Set to Array for storage
+      analytics.dailyStats[today].platformsBlocked = Array.from(analytics.dailyStats[today].platformsBlocked);
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+      console.log('[WisdomFeed] Tracked blocking session for', this.platform);
+    });
+  }
+
+  trackHighlightViewed() {
+    this.highlightsViewed++;
+    
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: []
+        };
+      }
+      
+      analytics.dailyStats[today].highlightsViewed++;
+      analytics.totalHighlightsViewed++;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+        // Update the display after tracking
+        setTimeout(() => this.updateBrainCellsDisplay(), 100);
+      });
+    });
+  }
+
+  trackNoteAdded() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: []
+        };
+      }
+      
+      analytics.dailyStats[today].notesAdded++;
+      analytics.totalNotesAdded++;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+        // Update the display after tracking
+        setTimeout(() => this.updateBrainCellsDisplay(), 100);
+      });
+    });
+  }
+
+  trackSessionEnd() {
+    const sessionDuration = Date.now() - this.sessionStartTime;
+    
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: []
+        };
+      }
+      
+      analytics.dailyStats[today].timeSpent += sessionDuration;
+      analytics.totalTimeSpent += sessionDuration;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+      console.log('[WisdomFeed] Tracked session duration:', sessionDuration, 'ms');
+    });
+  }
+
+  getDefaultAnalytics() {
+    return {
+      totalSessions: 0,
+      totalTimeSpent: 0,
+      totalHighlightsViewed: 0,
+      totalNotesAdded: 0,
+      brainCellsSaved: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      firstUseDate: new Date().toISOString(),
+      lastActiveDate: new Date().toISOString(),
+      platformStats: {
+        facebook: 0,
+        twitter: 0,
+        instagram: 0
+      },
+      dailyStats: {},
+      achievements: []
+    };
+  }
+
+  calculateBrainCellsSaved() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      
+      // Calculate brain cells saved based on various factors
+      const sessionsWeight = analytics.totalSessions * 10;
+      const timeWeight = Math.floor(analytics.totalTimeSpent / (1000 * 60)) * 2; // 2 per minute
+      const highlightsWeight = analytics.totalHighlightsViewed * 5;
+      const notesWeight = analytics.totalNotesAdded * 25;
+      
+      const totalBrainCells = sessionsWeight + timeWeight + highlightsWeight + notesWeight;
+      
+      analytics.brainCellsSaved = totalBrainCells;
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+      
+      return totalBrainCells;
+    });
+  }
+
+  updateBrainCellsDisplay() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      
+      // Calculate current brain cells saved
+      const sessionsWeight = analytics.totalSessions * 10;
+      const timeWeight = Math.floor(analytics.totalTimeSpent / (1000 * 60)) * 2; // 2 per minute
+      const highlightsWeight = analytics.totalHighlightsViewed * 5;
+      const notesWeight = analytics.totalNotesAdded * 25;
+      
+      const totalBrainCells = sessionsWeight + timeWeight + highlightsWeight + notesWeight;
+      
+      // Update the display
+      const countElement = document.getElementById('brain-cells-count');
+      if (countElement) {
+        countElement.textContent = totalBrainCells.toLocaleString();
+        
+        // Add a small animation effect
+        countElement.style.transform = 'scale(1.1)';
+        setTimeout(() => {
+          countElement.style.transform = 'scale(1)';
+        }, 200);
+      }
+      
+      // Update analytics with current value
+      analytics.brainCellsSaved = totalBrainCells;
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+    });
+  }
+
+  setupPageVisibilityTracking() {
+    // Track when user leaves/returns to tab
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // User switched away from tab
+        this.trackSessionEnd();
+      } else {
+        // User returned to tab  
+        this.sessionStartTime = Date.now();
+      }
+    });
+
+    // Track when user navigates away
+    window.addEventListener('beforeunload', () => {
+      this.trackSessionEnd();
+    });
+  }
+
   async waitForPageLoad() {
-    // Shorter wait for dynamic content to load
-    const initialWait = this.platform === 'facebook' ? 800 : 1200; // Shorter delay for Facebook
-    await new Promise(resolve => setTimeout(resolve, initialWait));
+    // Testing without initial delay
+    // const initialWait = this.platform === 'facebook' ? 800 : 1200; // Shorter delay for Facebook
+    // await new Promise(resolve => setTimeout(resolve, initialWait));
     
     // Wait for specific elements based on platform
     const maxWaits = 8;
@@ -1501,6 +1737,11 @@ class FeedWiseBlocker {
             <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
+          <div class="fb-blocker-gamification">
+            <div class="fb-blocker-brain-cells" id="brain-cells-counter">
+              🧠 <span id="brain-cells-count">0</span> brain cells saved
+            </div>
+          </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
@@ -1524,6 +1765,8 @@ class FeedWiseBlocker {
         // Replacement approach for Facebook/Instagram
         feed.innerHTML = '';
         feed.appendChild(container);
+        // Ensure the feed element is visible after adding our container
+        feed.style.display = '';
       }
       
       // Setup add note button
@@ -1535,6 +1778,9 @@ class FeedWiseBlocker {
       document.getElementById('exit-btn').addEventListener('click', () => {
         this.showExitConfirmation();
       });
+      
+      // Load and display brain cells saved counter
+      this.updateBrainCellsDisplay();
       
       // Debug logging for highlights container on Twitter
       // if (this.platform === 'twitter') {
@@ -1596,6 +1842,11 @@ class FeedWiseBlocker {
             <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
+          <div class="fb-blocker-gamification">
+            <div class="fb-blocker-brain-cells" id="brain-cells-counter">
+              🧠 <span id="brain-cells-count">0</span> brain cells saved
+            </div>
+          </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
@@ -1626,6 +1877,8 @@ class FeedWiseBlocker {
       } else {
         // Insert before approach for Facebook/Instagram
         feed.parentNode.insertBefore(container, feed);
+        // Ensure the feed element is visible (it might have been hidden by hidePlatformFeed)
+        feed.style.display = '';
       }
       
       // Setup add note button
@@ -1637,6 +1890,9 @@ class FeedWiseBlocker {
       document.getElementById('exit-btn').addEventListener('click', () => {
         this.showExitConfirmation();
       });
+
+      // Load and display brain cells saved counter
+      this.updateBrainCellsDisplay();
 
       // Debug logging for highlights container on Twitter
       // if (this.platform === 'twitter') {
@@ -1688,6 +1944,8 @@ class FeedWiseBlocker {
               container.appendChild(highlightElement);
             }
             this.displayedHighlights.push(highlight);
+            // Track highlight viewed
+            this.trackHighlightViewed();
           }
         }
       }
@@ -1832,6 +2090,11 @@ class FeedWiseBlocker {
             <span class="fb-blocker-icon">🦉</span>
             WisdomFeed
           </h1>
+          <div class="fb-blocker-gamification">
+            <div class="fb-blocker-brain-cells" id="brain-cells-counter">
+              🧠 <span id="brain-cells-count">0</span> brain cells saved
+            </div>
+          </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
               ➕ Add Note
@@ -1866,6 +2129,9 @@ class FeedWiseBlocker {
       document.getElementById('exit-btn').addEventListener('click', () => {
         this.showExitConfirmation();
       });
+
+      // Load and display brain cells saved counter
+      this.updateBrainCellsDisplay();
 
       // Setup drag and drop for CSV upload
       this.setupPageDragAndDrop();
@@ -2289,6 +2555,9 @@ class FeedWiseBlocker {
         // Remove form
         document.getElementById('add-note-form').remove();
         
+        // Track note addition
+        this.trackNoteAdded();
+        
         // Show success message
         this.showNoteStatus(`✅ Note "${title}" saved successfully!`, 'success');
         
@@ -2390,6 +2659,9 @@ class FeedWiseBlocker {
   }
 
   exitWisdomFeed() {
+    // Track session end before exiting
+    this.trackSessionEnd();
+    
     // Remove the WisdomFeed overlay
     const overlay = document.getElementById('wisdomfeed-overlay');
     if (overlay) {
@@ -2412,6 +2684,18 @@ class FeedWiseBlocker {
             child.style.visibility = 'visible';
           }
         });
+      }
+    }
+
+    // For Facebook, we need to restore display
+    if (this.platform === 'facebook') {
+      const fbSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
+      for (const selector of fbSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.style.display === 'none') {
+          element.style.display = '';
+          break;
+        }
       }
     }
 

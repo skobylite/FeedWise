@@ -3,6 +3,8 @@ class NewTabWisdom {
     this.allContent = [];
     this.wisdomBatchSize = 3; // Load 3 wisdoms at a time
     this.isLoading = false;
+    this.initialLoadComplete = false; // Prevent infinite scroll before initial load
+    this.sessionStartTime = Date.now();
     this.init();
   }
 
@@ -13,10 +15,16 @@ class NewTabWisdom {
       return;
     }
 
+    // Track new tab session
+    this.trackNewTabSession();
+
     this.detectAndApplyTheme();
     this.setupEventListeners();
     await this.loadContent();
+    console.log('[NewTab] Content loaded, now loading initial wisdoms with', this.allContent.length, 'items available');
+    console.log('[NewTab] About to call loadInitialWisdoms()');
     this.loadInitialWisdoms();
+    this.initBrainCellsCounter();
   }
 
   detectAndApplyTheme() {
@@ -136,7 +144,8 @@ class NewTabWisdom {
   setupInfiniteScroll() {
     const sentinel = document.getElementById('scroll-sentinel');
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !this.isLoading) {
+      if (entries[0].isIntersecting && !this.isLoading && this.initialLoadComplete) {
+        console.log('[NewTab] Infinite scroll triggered - loading more wisdom');
         this.loadMoreWisdom();
       }
     }, { threshold: 1.0 });
@@ -149,6 +158,7 @@ class NewTabWisdom {
       chrome.storage.local.get(['highlights', 'obsidianNotes'], (data) => {
         const highlights = data.highlights || [];
         const notes = data.obsidianNotes || [];
+        console.log('[NewTab] Loaded highlights:', highlights.length, 'notes:', notes.length);
         const uploadSection = document.getElementById('upload-section');
         const wisdomFeed = document.getElementById('wisdom-feed');
 
@@ -188,13 +198,20 @@ class NewTabWisdom {
 
         // Shuffle the content for variety
         this.allContent = this.allContent.sort(() => Math.random() - 0.5);
+        console.log('[NewTab] Total content after shuffle:', this.allContent.length);
         resolve();
       });
     });
   }
 
   loadInitialWisdoms() {
+    console.log('[NewTab] loadInitialWisdoms called with wisdomBatchSize:', this.wisdomBatchSize);
     this.loadWisdoms(this.wisdomBatchSize);
+    // Mark initial load as complete after the setTimeout in loadWisdoms
+    setTimeout(() => {
+      this.initialLoadComplete = true;
+      console.log('[NewTab] Initial load complete - infinite scroll now enabled');
+    }, 600); // Slightly longer than the 500ms delay in loadWisdoms
   }
 
   loadMoreWisdom() {
@@ -205,6 +222,8 @@ class NewTabWisdom {
     if (this.isLoading) return;
     this.isLoading = true;
     
+    console.log('[NewTab] Loading', count, 'wisdoms. Available content:', this.allContent.length);
+    
     const loadingIndicator = document.getElementById('loading-indicator');
     loadingIndicator.style.display = 'block';
 
@@ -213,7 +232,8 @@ class NewTabWisdom {
       const feed = document.getElementById('wisdom-feed');
       for (let i = 0; i < count; i++) {
         if (this.allContent.length > 0) {
-          const wisdom = this.allContent.pop(); // Get one from the shuffled list
+          const wisdom = this.allContent.shift(); // Get one from the shuffled list
+          console.log('[NewTab] Displaying wisdom', i+1, ':', wisdom.content.substring(0, 50) + '...');
           this.displayWisdom(wisdom, feed);
         }
       }
@@ -246,6 +266,9 @@ class NewTabWisdom {
     card.appendChild(contentDiv);
     card.appendChild(attributionDiv);
     feed.appendChild(card);
+    
+    // Track wisdom viewed
+    this.trackWisdomViewed();
   }
   
   showAllContentLoaded() {
@@ -338,6 +361,10 @@ class NewTabWisdom {
       notes.push(newNote);
       chrome.storage.local.set({ obsidianNotes: notes }, () => {
         document.body.removeChild(modal);
+        
+        // Track note addition
+        this.trackNoteAdded();
+        
         // Add the new note to the top of the feed
         const feed = document.getElementById('wisdom-feed');
         this.displayWisdom(newNote, feed);
@@ -429,6 +456,96 @@ class NewTabWisdom {
     reader.readAsText(file);
   }
 
+  // Brain Cells Counter System
+  initBrainCellsCounter() {
+    this.loadAndDisplayBrainCells();
+    
+    // Update counter every 30 seconds while viewing
+    setInterval(() => {
+      this.updateBrainCellsFromViewing();
+    }, 30000);
+  }
+
+  getEmojiForLevel(brainCells) {
+    const levels = [
+      { threshold: 0, emoji: '🧠' },      // Level 1: Basic brain
+      { threshold: 100, emoji: '🤔' },    // Level 2: Thinking
+      { threshold: 500, emoji: '💡' },    // Level 3: Light bulb moment
+      { threshold: 1000, emoji: '🎓' },   // Level 4: Graduation cap
+      { threshold: 2500, emoji: '🧙‍♂️' },  // Level 5: Wizard
+      { threshold: 5000, emoji: '🔮' },   // Level 6: Crystal ball
+      { threshold: 10000, emoji: '🚀' },  // Level 7: Rocket
+      { threshold: 20000, emoji: '🌟' },  // Level 8: Star
+      { threshold: 50000, emoji: '👑' },  // Level 9: Crown
+      { threshold: 100000, emoji: '🧠‍🔥' } // Level 10: Burning brain
+    ];
+
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (brainCells >= levels[i].threshold) {
+        return levels[i].emoji;
+      }
+    }
+    return '🧠';
+  }
+
+  async loadAndDisplayBrainCells() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+        const analytics = data.feedwiseAnalytics || {};
+        const brainCells = this.calculateBrainCells(analytics);
+        
+        const counter = document.getElementById('brain-cells-counter');
+        const countEl = document.getElementById('brain-cells-count');
+        const emojiEl = document.getElementById('brain-cells-emoji');
+        
+        if (counter && countEl && emojiEl) {
+          countEl.textContent = brainCells.toLocaleString();
+          emojiEl.textContent = this.getEmojiForLevel(brainCells);
+          counter.style.display = 'block';
+          
+          // Animate the counter appearance
+          counter.style.opacity = '0';
+          counter.style.transform = 'scale(0.8)';
+          setTimeout(() => {
+            counter.style.transition = 'all 0.5s ease';
+            counter.style.opacity = '1';
+            counter.style.transform = 'scale(1)';
+          }, 500);
+        }
+        
+        resolve(brainCells);
+      });
+    });
+  }
+
+  calculateBrainCells(analytics) {
+    const sessions = analytics.totalSessions || 0;
+    const minutes = Math.floor((analytics.totalTimeSpent || 0) / 60000);
+    const highlights = analytics.totalHighlights || 0;
+    const notes = analytics.totalNotes || 0;
+    
+    return (sessions * 10) + (minutes * 2) + (highlights * 5) + (notes * 25);
+  }
+
+  updateBrainCellsFromViewing() {
+    // Update analytics for viewing time
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || {};
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (!analytics.daily) analytics.daily = {};
+      if (!analytics.daily[today]) analytics.daily[today] = {};
+      
+      // Add 30 seconds of viewing time
+      analytics.daily[today].timeSpent = (analytics.daily[today].timeSpent || 0) + 30000;
+      analytics.totalTimeSpent = (analytics.totalTimeSpent || 0) + 30000;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+        this.loadAndDisplayBrainCells();
+      });
+    });
+  }
+
   parseCSV(csvText) {
     const lines = csvText.split('\n').filter(line => line.trim() !== '');
     const highlights = [];
@@ -480,6 +597,101 @@ class NewTabWisdom {
     if (quote.match(/^[^a-zA-Z]*$/)) return false;
     
     return true;
+  }
+
+  // Analytics tracking methods
+  trackNewTabSession() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      // Track daily new tab sessions
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: [],
+          newTabSessions: 0
+        };
+      }
+      
+      analytics.dailyStats[today].newTabSessions = (analytics.dailyStats[today].newTabSessions || 0) + 1;
+      analytics.totalNewTabSessions = (analytics.totalNewTabSessions || 0) + 1;
+      analytics.lastActiveDate = new Date().toISOString();
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+      console.log('[WisdomFeed NewTab] Tracked new tab session');
+    });
+  }
+
+  trackWisdomViewed() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: [],
+          newTabSessions: 0
+        };
+      }
+      
+      analytics.dailyStats[today].highlightsViewed++;
+      analytics.totalHighlightsViewed++;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+    });
+  }
+
+  trackNoteAdded() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      const today = new Date().toDateString();
+      
+      if (!analytics.dailyStats[today]) {
+        analytics.dailyStats[today] = {
+          sessions: 0,
+          timeSpent: 0,
+          highlightsViewed: 0,
+          notesAdded: 0,
+          platformsBlocked: [],
+          newTabSessions: 0
+        };
+      }
+      
+      analytics.dailyStats[today].notesAdded++;
+      analytics.totalNotesAdded++;
+      
+      chrome.storage.local.set({ feedwiseAnalytics: analytics });
+    });
+  }
+
+  getDefaultAnalytics() {
+    return {
+      totalSessions: 0,
+      totalTimeSpent: 0,
+      totalHighlightsViewed: 0,
+      totalNotesAdded: 0,
+      totalNewTabSessions: 0,
+      brainCellsSaved: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      firstUseDate: new Date().toISOString(),
+      lastActiveDate: new Date().toISOString(),
+      platformStats: {
+        facebook: 0,
+        twitter: 0,
+        instagram: 0
+      },
+      dailyStats: {},
+      achievements: []
+    };
   }
 }
 

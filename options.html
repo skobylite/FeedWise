@@ -109,6 +109,138 @@
       transform: translateY(-1px);
     }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brain-cells-counter {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 25px;
+      padding: 6px 12px;
+      transition: all var(--transition-fast);
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+
+    .brain-cells-counter:hover {
+      background: var(--text-accent);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .brain-cells-text {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .brain-cells-counter:hover .brain-cells-text {
+      color: white;
+    }
+
+    .brain-cells-emoji {
+      font-size: 14px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    .brain-cells-count {
+      font-weight: 700;
+      color: var(--text-accent);
+    }
+
+    .brain-cells-counter:hover .brain-cells-count {
+      color: white;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(24, 119, 242, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(24, 119, 242, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(24, 119, 242, 0); }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-3px); }
+      60% { transform: translateY(-2px); }
+    }
+
+    .badges-section {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .badges-section h4 {
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .badges-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 25px;
+      padding: 8px 16px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: all var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .badge.earned {
+      background: linear-gradient(135deg, var(--text-accent) 0%, #667eea 100%);
+      color: white;
+      border-color: var(--text-accent);
+      box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
+    }
+
+    .badge.earned::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    .badge-emoji {
+      font-size: 16px;
+    }
+
+    .badge-text {
+      font-weight: 500;
+    }
+
+    .badge-threshold {
+      font-size: 12px;
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      50% { left: 100%; }
+      100% { left: 100%; }
+    }
+
     .description {
       font-size: 1.1rem;
       color: var(--text-secondary);
@@ -575,13 +707,119 @@
     .obsidian-note-remove:hover {
       background: #c82333;
     }
+
+    /* Analytics Dashboard Styles */
+    .analytics-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .analytics-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      text-align: center;
+      box-shadow: var(--shadow-light);
+      transition: transform var(--transition-fast);
+    }
+
+    .analytics-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .analytics-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .analytics-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .analytics-details {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 20px;
+    }
+
+    .analytics-details h4 {
+      margin: 0 0 16px 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+
+    .platform-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .platform-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .platform-stat span:first-child {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .platform-stat span:last-child {
+      color: var(--text-accent);
+      font-weight: 600;
+    }
+
+    .readwise-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: var(--border-radius);
+      font-size: 0.9rem;
+      min-height: 20px;
+    }
+
+    .readwise-status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .readwise-status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f1b0b7;
+    }
+
+    .readwise-status.loading {
+      background: #cce5ff;
+      color: #0056b3;
+      border: 1px solid #99d6ff;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>FeedWise Settings</h1>
-      <button class="theme-toggle" id="theme-toggle">🌙 Dark</button>
+      <div class="header-right">
+        <div class="brain-cells-counter" id="brain-cells-counter" style="display: none;">
+          <div class="brain-cells-text">
+            <span class="brain-cells-emoji" id="brain-cells-emoji">🧠</span>
+            <span id="brain-cells-count">0</span> brain cells saved
+          </div>
+        </div>
+        <button class="theme-toggle" id="theme-toggle">🌙 Dark</button>
+      </div>
     </div>
     
     <p class="description">
@@ -657,6 +895,58 @@
           </div>
         </div>
 
+        <div class="settings-section">
+          <h3>🧠 Brain Cells Saved</h3>
+          <div id="analytics-dashboard">
+            <div class="analytics-summary">
+              <div class="analytics-card">
+                <div class="analytics-number" id="total-brain-cells">0</div>
+                <div class="analytics-label">Brain Cells Saved</div>
+              </div>
+              <div class="analytics-card">
+                <div class="analytics-number" id="total-highlights-viewed">0</div>
+                <div class="analytics-label">Highlights Viewed</div>
+              </div>
+              <div class="analytics-card">
+                <div class="analytics-number" id="total-time-spent">0m</div>
+                <div class="analytics-label">Time in Wisdom</div>
+              </div>
+            </div>
+            <div class="analytics-details">
+              <h4>Platform Breakdown</h4>
+              <div class="platform-stats">
+                <div class="platform-stat">
+                  <span>📘 Facebook:</span>
+                  <span id="facebook-sessions">0 sessions</span>
+                </div>
+                <div class="platform-stat">
+                  <span>🐦 Twitter/X:</span>
+                  <span id="twitter-sessions">0 sessions</span>
+                </div>
+                <div class="platform-stat">
+                  <span>📸 Instagram:</span>
+                  <span id="instagram-sessions">0 sessions</span>
+                </div>
+              </div>
+            </div>
+            <div class="badges-section">
+              <h4>🏆 Badges Earned</h4>
+              <div class="badges-container" id="badges-container">
+                <!-- Badges will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
+
+        <div class="stats" id="stats-section" style="display: none;">
+          <h3>📊 Statistics</h3>
+          <div id="stats-content"></div>
+        </div>
+      </div>
+
+      <div class="right-column">
         <div class="upload-section">
           <h3>📚 Readwise Highlights</h3>
           <div class="file-input-wrapper">
@@ -673,13 +963,27 @@
           </p>
         </div>
 
-        <div class="stats" id="stats-section" style="display: none;">
-          <h3>📊 Statistics</h3>
-          <div id="stats-content"></div>
+        <div class="upload-section">
+          <h3>🔗 Readwise API Integration</h3>
+          <p class="section-description">Connect your Readwise account to automatically sync your highlights</p>
+          
+          <div style="margin-bottom: 20px;">
+            <input type="password" id="readwise-api-key" placeholder="Enter your Readwise API key" class="note-title-input" style="margin-bottom: 10px;">
+            <button id="save-readwise-key" class="upload-button">Save API Key</button>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <button id="sync-readwise" class="upload-button" disabled>Sync Highlights</button>
+          </div>
+          
+          <div class="readwise-status" id="readwise-status"></div>
+          
+          <p class="help-text">
+            <strong>How to get your API key:</strong> 
+            <a href="https://readwise.io/access_token" target="_blank" class="help-link">Visit Readwise Access Token page</a> 
+            to generate your personal API key. This allows FeedWise to automatically pull your latest highlights.
+          </p>
         </div>
-      </div>
-
-      <div class="right-column">
         <div class="obsidian-section">
           <h3>📝 Obsidian Integration</h3>
       <p class="section-description">Upload your favorite Obsidian notes to display randomly in your feed</p>
@@ -693,14 +997,15 @@
       </div>
           <div class="obsidian-upload-section">
             <h4>Upload Markdown Files</h4>
-            <input type="file" id="obsidianFiles" accept=".md" multiple class="file-input">
-            <label for="obsidianFiles" class="file-input-label">📝 Choose .md files</label>
+            <input type="file" id="obsidian-files" accept=".md" multiple class="file-input">
+            <label for="obsidian-files" class="file-input-label" id="obsidian-file-label">📝 Choose .md files</label>
+            <button id="upload-notes" class="upload-button" disabled>Upload Notes</button>
           </div>
 
           <div class="obsidian-paste-section">
             <h4>Or Paste Note Content</h4>
-            <input type="text" id="note-title" placeholder="Note title" class="note-input">
-            <textarea id="note-content" placeholder="Paste your note content here (Markdown supported)" class="note-textarea"></textarea>
+            <input type="text" id="note-title" placeholder="Note title" class="note-title-input">
+            <textarea id="note-content" placeholder="Paste your note content here (Markdown supported)" class="note-content-textarea"></textarea>
             <button id="add-note" class="upload-button">Add Note</button>
           </div>
 
@@ -713,20 +1018,6 @@
     </div>
 
     <div class="status-message" id="status-message"></div>
-      <div class="stats-title">Current Highlights</div>
-      <div class="stats-item">
-        <span>Total highlights:</span>
-        <span class="stats-value" id="total-count">0</span>
-      </div>
-      <div class="stats-item">
-        <span>Valid highlights:</span>
-        <span class="stats-value" id="valid-count">0</span>
-      </div>
-      <div class="stats-item">
-        <span>Last updated:</span>
-        <span class="stats-value" id="last-updated">Never</span>
-      </div>
-    </div>
   </div>
 
   <script src="options.js"></script>

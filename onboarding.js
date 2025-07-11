@@ -95,6 +95,9 @@ class OnboardingManager {
   }
 
   completeOnboarding() {
+    // Track onboarding completion
+    this.trackOnboardingStep('completed');
+    
     // Mark onboarding as complete
     chrome.storage.local.set({ 
       feedwiseOnboardingComplete: true,
@@ -133,7 +136,6 @@ class OnboardingManager {
       container.innerHTML = `
         <div class="logo" style="font-size: 5rem;">📤️</div>
         <h1 class="title">Your Feed, Your Rules:</h1>
-        <br>
         <p class="subtitle">FeedWise is ready to transform your social media experience</p>
         <div style="margin: 20px 0; text-align: center;">
           <p style="margin-bottom: 10px;">Don't have Readwise? <a href="https://readwise.io/propane" target="_blank" style="color: #FF6B6B; text-decoration: none; font-weight: 500;">Get it here</a></p>
@@ -177,7 +179,7 @@ class OnboardingManager {
             opacity: 0.5;
           ">Upload Highlights</button>
         </div>
-        <br>
+
         <div style="background: rgba(255, 255, 255, 0.08); padding: 24px; border-radius: 16px; margin: 32px 0;">
           <h3 style="margin-bottom: 16px;">Quick Start:</h3>
           <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
@@ -306,7 +308,7 @@ class OnboardingManager {
   // Analytics/tracking for improvement (privacy-friendly)
   trackOnboardingStep(step) {
     chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
-      const analytics = data.feedwiseAnalytics || {};
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
       analytics.onboardingSteps = analytics.onboardingSteps || [];
       analytics.onboardingSteps.push({
         step: step,
@@ -315,6 +317,29 @@ class OnboardingManager {
       
       chrome.storage.local.set({ feedwiseAnalytics: analytics });
     });
+  }
+
+  getDefaultAnalytics() {
+    return {
+      totalSessions: 0,
+      totalTimeSpent: 0,
+      totalHighlightsViewed: 0,
+      totalNotesAdded: 0,
+      totalNewTabSessions: 0,
+      brainCellsSaved: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      firstUseDate: new Date().toISOString(),
+      lastActiveDate: new Date().toISOString(),
+      platformStats: {
+        facebook: 0,
+        twitter: 0,
+        instagram: 0
+      },
+      dailyStats: {},
+      achievements: [],
+      onboardingSteps: []
+    };
   }
 }
 

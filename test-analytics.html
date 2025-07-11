@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FeedWise Analytics Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { margin: 5px; padding: 10px; }
+        .analytics-display { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>FeedWise Gamification Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Analytics Tracking</h2>
+        <button onclick="simulateBlockingSession()">Simulate Blocking Session</button>
+        <button onclick="simulateHighlightViewing()">Simulate Highlight Viewing</button>
+        <button onclick="simulateNoteAdding()">Simulate Note Adding</button>
+        <button onclick="displayAnalytics()">Display Analytics</button>
+        <button onclick="clearAnalytics()">Clear Analytics</button>
+    </div>
+
+    <div class="analytics-display" id="analytics-display">
+        Analytics data will appear here...
+    </div>
+
+    <script>
+        function getDefaultAnalytics() {
+            return {
+                totalSessions: 0,
+                totalTimeSpent: 0,
+                totalHighlightsViewed: 0,
+                totalNotesAdded: 0,
+                totalNewTabSessions: 0,
+                brainCellsSaved: 0,
+                currentStreak: 0,
+                longestStreak: 0,
+                firstUseDate: new Date().toISOString(),
+                lastActiveDate: new Date().toISOString(),
+                platformStats: {
+                    facebook: 0,
+                    twitter: 0,
+                    instagram: 0
+                },
+                dailyStats: {},
+                achievements: []
+            };
+        }
+
+        function simulateBlockingSession() {
+            chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+                const analytics = data.feedwiseAnalytics || getDefaultAnalytics();
+                const today = new Date().toDateString();
+                
+                if (!analytics.dailyStats[today]) {
+                    analytics.dailyStats[today] = {
+                        sessions: 0,
+                        timeSpent: 0,
+                        highlightsViewed: 0,
+                        notesAdded: 0,
+                        platformsBlocked: []
+                    };
+                }
+                
+                analytics.dailyStats[today].sessions++;
+                analytics.totalSessions++;
+                analytics.platformStats.facebook++;
+                analytics.lastActiveDate = new Date().toISOString();
+                
+                chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+                    console.log('Simulated blocking session');
+                    displayAnalytics();
+                });
+            });
+        }
+
+        function simulateHighlightViewing() {
+            chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+                const analytics = data.feedwiseAnalytics || getDefaultAnalytics();
+                const today = new Date().toDateString();
+                
+                if (!analytics.dailyStats[today]) {
+                    analytics.dailyStats[today] = {
+                        sessions: 0,
+                        timeSpent: 0,
+                        highlightsViewed: 0,
+                        notesAdded: 0,
+                        platformsBlocked: []
+                    };
+                }
+                
+                analytics.dailyStats[today].highlightsViewed++;
+                analytics.totalHighlightsViewed++;
+                
+                chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+                    console.log('Simulated highlight viewing');
+                    displayAnalytics();
+                });
+            });
+        }
+
+        function simulateNoteAdding() {
+            chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+                const analytics = data.feedwiseAnalytics || getDefaultAnalytics();
+                const today = new Date().toDateString();
+                
+                if (!analytics.dailyStats[today]) {
+                    analytics.dailyStats[today] = {
+                        sessions: 0,
+                        timeSpent: 0,
+                        highlightsViewed: 0,
+                        notesAdded: 0,
+                        platformsBlocked: []
+                    };
+                }
+                
+                analytics.dailyStats[today].notesAdded++;
+                analytics.totalNotesAdded++;
+                
+                chrome.storage.local.set({ feedwiseAnalytics: analytics }, () => {
+                    console.log('Simulated note adding');
+                    displayAnalytics();
+                });
+            });
+        }
+
+        function displayAnalytics() {
+            chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+                const analytics = data.feedwiseAnalytics || getDefaultAnalytics();
+                
+                // Calculate brain cells saved
+                const sessionsWeight = analytics.totalSessions * 10;
+                const timeWeight = Math.floor(analytics.totalTimeSpent / (1000 * 60)) * 2;
+                const highlightsWeight = analytics.totalHighlightsViewed * 5;
+                const notesWeight = analytics.totalNotesAdded * 25;
+                const totalBrainCells = sessionsWeight + timeWeight + highlightsWeight + notesWeight;
+                
+                const display = document.getElementById('analytics-display');
+                display.innerHTML = `
+                    <h3>Current Analytics</h3>
+                    <p><strong>Brain Cells Saved:</strong> ${totalBrainCells.toLocaleString()}</p>
+                    <p><strong>Total Sessions:</strong> ${analytics.totalSessions}</p>
+                    <p><strong>Highlights Viewed:</strong> ${analytics.totalHighlightsViewed}</p>
+                    <p><strong>Notes Added:</strong> ${analytics.totalNotesAdded}</p>
+                    <p><strong>Platform Stats:</strong></p>
+                    <ul>
+                        <li>Facebook: ${analytics.platformStats.facebook || 0} sessions</li>
+                        <li>Twitter: ${analytics.platformStats.twitter || 0} sessions</li>
+                        <li>Instagram: ${analytics.platformStats.instagram || 0} sessions</li>
+                    </ul>
+                    <h4>Calculation Breakdown:</h4>
+                    <ul>
+                        <li>Sessions: ${analytics.totalSessions} × 10 = ${sessionsWeight}</li>
+                        <li>Time: ${Math.floor(analytics.totalTimeSpent / (1000 * 60))} min × 2 = ${timeWeight}</li>
+                        <li>Highlights: ${analytics.totalHighlightsViewed} × 5 = ${highlightsWeight}</li>
+                        <li>Notes: ${analytics.totalNotesAdded} × 25 = ${notesWeight}</li>
+                        <li><strong>Total: ${totalBrainCells}</strong></li>
+                    </ul>
+                `;
+            });
+        }
+
+        function clearAnalytics() {
+            chrome.storage.local.remove(['feedwiseAnalytics'], () => {
+                console.log('Analytics cleared');
+                displayAnalytics();
+            });
+        }
+
+        // Load analytics on page load
+        displayAnalytics();
+    </script>
+</body>
+</html>

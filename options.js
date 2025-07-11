@@ -10,7 +10,10 @@ class OptionsManager {
     this.setupFileUpload();
     this.setupDragAndDrop();
     this.setupObsidianSection();
+    this.setupReadwiseSection();
     this.loadCurrentStats();
+    this.loadAnalytics();
+    this.initBrainCellsCounter();
   }
 
   loadTheme() {
@@ -446,6 +449,333 @@ class OptionsManager {
       setTimeout(() => {
         statusEl.style.display = 'none';
       }, 3000);
+    }
+  }
+
+  loadAnalytics() {
+    chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+      const analytics = data.feedwiseAnalytics || this.getDefaultAnalytics();
+      
+      // Use the same calculation as the header counter
+      const totalBrainCells = this.calculateBrainCells(analytics);
+      
+      // Update the display
+      document.getElementById('total-brain-cells').textContent = totalBrainCells.toLocaleString();
+      document.getElementById('total-sessions').textContent = analytics.totalSessions.toLocaleString();
+      document.getElementById('total-highlights-viewed').textContent = analytics.totalHighlightsViewed.toLocaleString();
+      
+      // Convert time to minutes
+      const minutesSpent = Math.floor(analytics.totalTimeSpent / (1000 * 60));
+      document.getElementById('total-time-spent').textContent = `${minutesSpent}m`;
+      
+      // Platform breakdown
+      const platformStats = analytics.platformStats || {};
+      document.getElementById('facebook-sessions').textContent = `${platformStats.facebook || 0} sessions`;
+      document.getElementById('twitter-sessions').textContent = `${platformStats.twitter || 0} sessions`;
+      document.getElementById('instagram-sessions').textContent = `${platformStats.instagram || 0} sessions`;
+      
+      // Load badges
+      this.loadBadges(totalBrainCells);
+    });
+  }
+
+  getDefaultAnalytics() {
+    return {
+      totalSessions: 0,
+      totalTimeSpent: 0,
+      totalHighlightsViewed: 0,
+      totalNotesAdded: 0,
+      totalNewTabSessions: 0,
+      brainCellsSaved: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      firstUseDate: new Date().toISOString(),
+      lastActiveDate: new Date().toISOString(),
+      platformStats: {
+        facebook: 0,
+        twitter: 0,
+        instagram: 0
+      },
+      dailyStats: {},
+      achievements: []
+    };
+  }
+
+  // Brain Cells Counter System
+  initBrainCellsCounter() {
+    this.loadAndDisplayBrainCells();
+  }
+
+  getEmojiForLevel(brainCells) {
+    const levels = [
+      { threshold: 0, emoji: '🧠' },      // Level 1: Basic brain
+      { threshold: 100, emoji: '🤔' },    // Level 2: Thinking
+      { threshold: 500, emoji: '💡' },    // Level 3: Light bulb moment
+      { threshold: 1000, emoji: '🎓' },   // Level 4: Graduation cap
+      { threshold: 2500, emoji: '🧙‍♂️' },  // Level 5: Wizard
+      { threshold: 5000, emoji: '🔮' },   // Level 6: Crystal ball
+      { threshold: 10000, emoji: '🚀' },  // Level 7: Rocket
+      { threshold: 20000, emoji: '🌟' },  // Level 8: Star
+      { threshold: 50000, emoji: '👑' },  // Level 9: Crown
+      { threshold: 100000, emoji: '🧠‍🔥' } // Level 10: Burning brain
+    ];
+
+    for (let i = levels.length - 1; i >= 0; i--) {
+      if (brainCells >= levels[i].threshold) {
+        return levels[i].emoji;
+      }
+    }
+    return '🧠';
+  }
+
+  async loadAndDisplayBrainCells() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['feedwiseAnalytics'], (data) => {
+        const analytics = data.feedwiseAnalytics || {};
+        const brainCells = this.calculateBrainCells(analytics);
+        
+        const counter = document.getElementById('brain-cells-counter');
+        const countEl = document.getElementById('brain-cells-count');
+        const emojiEl = document.getElementById('brain-cells-emoji');
+        
+        if (counter && countEl && emojiEl) {
+          countEl.textContent = brainCells.toLocaleString();
+          emojiEl.textContent = this.getEmojiForLevel(brainCells);
+          counter.style.display = 'block';
+          
+          // Animate the counter appearance
+          counter.style.opacity = '0';
+          counter.style.transform = 'scale(0.8)';
+          setTimeout(() => {
+            counter.style.transition = 'all 0.5s ease';
+            counter.style.opacity = '1';
+            counter.style.transform = 'scale(1)';
+          }, 300);
+        }
+        
+        resolve(brainCells);
+      });
+    });
+  }
+
+  calculateBrainCells(analytics) {
+    const sessions = analytics.totalSessions || 0;
+    const minutes = Math.floor((analytics.totalTimeSpent || 0) / 60000);
+    const highlights = analytics.totalHighlights || 0;
+    const notes = analytics.totalNotes || 0;
+    
+    return (sessions * 10) + (minutes * 2) + (highlights * 5) + (notes * 25);
+  }
+
+  loadBadges(currentBrainCells) {
+    const levels = [
+      { threshold: 0, emoji: '🧠', name: 'First Steps', description: 'Started your wisdom journey' },
+      { threshold: 100, emoji: '🤔', name: 'Deep Thinker', description: 'Pondering the big questions' },
+      { threshold: 500, emoji: '💡', name: 'Enlightened', description: 'Having those lightbulb moments' },
+      { threshold: 1000, emoji: '🎓', name: 'Scholar', description: 'Graduated to wisdom seeker' },
+      { threshold: 2500, emoji: '🧙‍♂️', name: 'Wisdom Wizard', description: 'Mastering the art of knowledge' },
+      { threshold: 5000, emoji: '🔮', name: 'Oracle', description: 'Seeing beyond the ordinary' },
+      { threshold: 10000, emoji: '🚀', name: 'Knowledge Rocket', description: 'Blasting off to new heights' },
+      { threshold: 20000, emoji: '🌟', name: 'Wisdom Star', description: 'Shining bright with insight' },
+      { threshold: 50000, emoji: '👑', name: 'Wisdom Royalty', description: 'Ruling the realm of knowledge' },
+      { threshold: 100000, emoji: '🧠‍🔥', name: 'Brain on Fire', description: 'Ultimate wisdom achieved' }
+    ];
+
+    const badgesContainer = document.getElementById('badges-container');
+    if (!badgesContainer) return;
+
+    badgesContainer.innerHTML = '';
+
+    levels.forEach(level => {
+      const earned = currentBrainCells >= level.threshold;
+      
+      const badge = document.createElement('div');
+      badge.className = `badge ${earned ? 'earned' : ''}`;
+      
+      badge.innerHTML = `
+        <span class="badge-emoji">${level.emoji}</span>
+        <span class="badge-text">${level.name}</span>
+        <span class="badge-threshold">(${level.threshold.toLocaleString()})</span>
+      `;
+      
+      badge.title = level.description;
+      badgesContainer.appendChild(badge);
+    });
+  }
+
+  // Readwise API Integration
+  setupReadwiseSection() {
+    const apiKeyInput = document.getElementById('readwise-api-key');
+    const saveKeyButton = document.getElementById('save-readwise-key');
+    const syncButton = document.getElementById('sync-readwise');
+    const statusEl = document.getElementById('readwise-status');
+
+    // Load saved API key
+    chrome.storage.local.get(['readwiseApiKey'], (data) => {
+      if (data.readwiseApiKey) {
+        apiKeyInput.value = data.readwiseApiKey;
+        syncButton.disabled = false;
+      }
+    });
+
+    // Save API key
+    saveKeyButton.addEventListener('click', () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        this.showReadwiseStatus('Please enter a valid API key', 'error');
+        return;
+      }
+
+      // Validate API key
+      this.validateReadwiseApiKey(apiKey).then(isValid => {
+        if (isValid) {
+          chrome.storage.local.set({ readwiseApiKey: apiKey }, () => {
+            this.showReadwiseStatus('✅ API key saved successfully!', 'success');
+            syncButton.disabled = false;
+          });
+        } else {
+          this.showReadwiseStatus('❌ Invalid API key. Please check and try again.', 'error');
+        }
+      });
+    });
+
+    // Sync highlights
+    syncButton.addEventListener('click', () => {
+      this.syncReadwiseHighlights();
+    });
+  }
+
+  async validateReadwiseApiKey(apiKey) {
+    try {
+      const response = await fetch('https://readwise.io/api/v2/auth/', {
+        headers: {
+          'Authorization': `Token ${apiKey}`
+        }
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error validating Readwise API key:', error);
+      return false;
+    }
+  }
+
+  async syncReadwiseHighlights() {
+    const statusEl = document.getElementById('readwise-status');
+    statusEl.textContent = '🔄 Syncing highlights from Readwise...';
+    statusEl.className = 'readwise-status loading';
+
+    try {
+      // Get API key
+      const data = await new Promise(resolve => {
+        chrome.storage.local.get(['readwiseApiKey'], resolve);
+      });
+
+      if (!data.readwiseApiKey) {
+        this.showReadwiseStatus('❌ No API key found. Please save your API key first.', 'error');
+        return;
+      }
+
+      // Fetch highlights from Readwise
+      const highlights = await this.fetchReadwiseHighlights(data.readwiseApiKey);
+      
+      if (highlights.length === 0) {
+        this.showReadwiseStatus('✅ No new highlights found.', 'success');
+        return;
+      }
+
+      // Transform Readwise highlights to FeedWise format
+      const feedwiseHighlights = highlights.map(h => ({
+        quote: h.text,
+        source: h.title || 'Unknown',
+        author: h.author || 'Unknown'
+      }));
+
+      // Get existing highlights and merge
+      const existingData = await new Promise(resolve => {
+        chrome.storage.local.get(['highlights'], resolve);
+      });
+
+      const existingHighlights = existingData.highlights || [];
+      const allHighlights = [...existingHighlights, ...feedwiseHighlights];
+
+      // Remove duplicates based on quote text
+      const uniqueHighlights = allHighlights.filter((highlight, index, self) =>
+        index === self.findIndex(h => h.quote === highlight.quote)
+      );
+
+      // Save to storage
+      chrome.storage.local.set({ 
+        highlights: uniqueHighlights,
+        lastReadwiseSync: new Date().toISOString()
+      }, () => {
+        this.showReadwiseStatus(`✅ Successfully synced ${feedwiseHighlights.length} highlights!`, 'success');
+      });
+
+    } catch (error) {
+      console.error('Error syncing Readwise highlights:', error);
+      this.showReadwiseStatus('❌ Error syncing highlights. Please try again.', 'error');
+    }
+  }
+
+  async fetchReadwiseHighlights(apiKey) {
+    const highlights = [];
+    let nextPageCursor = null;
+
+    do {
+      const url = new URL('https://readwise.io/api/v2/export/');
+      if (nextPageCursor) {
+        url.searchParams.append('pageCursor', nextPageCursor);
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Token ${apiKey}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Readwise API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract highlights from books
+      data.results.forEach(book => {
+        if (book.highlights) {
+          book.highlights.forEach(highlight => {
+            if (highlight.text && highlight.text.length > 15) {
+              highlights.push({
+                text: highlight.text,
+                title: book.title,
+                author: book.author,
+                category: book.category,
+                highlighted_at: highlight.highlighted_at
+              });
+            }
+          });
+        }
+      });
+
+      nextPageCursor = data.nextPageCursor;
+      
+      // Add delay to respect rate limits
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+    } while (nextPageCursor);
+
+    return highlights;
+  }
+
+  showReadwiseStatus(message, type) {
+    const statusEl = document.getElementById('readwise-status');
+    statusEl.textContent = message;
+    statusEl.className = `readwise-status ${type}`;
+    
+    if (type === 'success' || type === 'error') {
+      setTimeout(() => {
+        statusEl.textContent = '';
+        statusEl.className = 'readwise-status';
+      }, 5000);
     }
   }
 }

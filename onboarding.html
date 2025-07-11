@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #232c52 0%, #4e1f7d 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -28,12 +28,32 @@
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 24px;
-            padding: 48px;
-            max-width: 600px;
-            width: 90%;
-            text-align: center;
+            padding: 24px;
+            max-width: 1000px;
+            width: 95%;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
             animation: slideInUp 0.8s ease-out;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .onboarding-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .left-column, .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         @keyframes slideInUp {
@@ -48,8 +68,8 @@
         }
 
         .logo {
-            font-size: 4rem;
-            margin-bottom: 16px;
+            font-size: 3.5rem;
+            margin-bottom: 8px;
             animation: bounce 2s infinite;
         }
 
@@ -66,30 +86,29 @@
         }
 
         .title {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .subtitle {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
-            margin-bottom: 40px;
-            line-height: 1.6;
+            margin-bottom: 0;
+            line-height: 1.4;
         }
 
         .features {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
             text-align: left;
         }
 
         .feature {
             background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
+            padding: 16px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -116,14 +135,14 @@
             background: rgba(255, 255, 255, 0.08);
             border: 2px solid rgba(255, 255, 255, 0.15);
             border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 32px;
+            padding: 20px;
+            margin-bottom: 0;
         }
 
         .newtab-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -131,10 +150,10 @@
         }
 
         .newtab-description {
-            font-size: 1rem;
+            font-size: 0.95rem;
             opacity: 0.9;
-            margin-bottom: 20px;
-            line-height: 1.5;
+            margin-bottom: 16px;
+            line-height: 1.4;
         }
 
         .toggle-container {
@@ -142,7 +161,7 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .toggle {
@@ -225,79 +244,99 @@
             color: #5a6fd8;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             .onboarding-container {
-                padding: 32px 24px;
+                padding: 24px 16px;
+                max-width: 95%;
             }
 
-            .features {
+            .onboarding-content {
                 grid-template-columns: 1fr;
+                gap: 24px;
             }
 
             .title {
                 font-size: 2rem;
             }
 
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
             .actions {
                 flex-direction: column;
                 align-items: center;
+                gap: 12px;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 250px;
             }
         }
     </style>
 </head>
 <body>
     <div class="onboarding-container">
-        <div class="logo">🦉</div>
-        <h1 class="title">Welcome to FeedWise!</h1>
-        <p class="subtitle">Reclaim your social feed. <br> Replace doomscrolling with intentional wisdom from your Readwise account. <br>
-             </p>
-
-        <div class="features">
-            <div class="feature">
-                <span class="feature-icon">📱</span>
-                <div class="feature-title">Multi-Site</div>
-                <div class="feature-description">Works on Facebook, Twitter, and Instagram</div>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">📚</span>
-                <div class="feature-title">Content that YOU choose</div>
-                <div class="feature-description">Shows your Readwise highlights and Obsidian notes</div>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">🌙</span>
-                <div class="feature-title">Distraction-free Design</div>
-                <div class="feature-description">With dark mode + subtle animations</div>
-            </div>
-            <div class="feature">
-                <span class="feature-icon">📝</span>
-                <div class="feature-title">Markdown-Ready</div>
-                <div class="feature-description">Full support for formatted notes and highlights</div>
-            </div>
+        <div class="onboarding-header">
+            <div class="logo">🦉</div>
+            <h1 class="title">Welcome to FeedWise!</h1>
+            <p class="subtitle">Reclaim your social feed. Replace doomscrolling with intentional wisdom from your Readwise account.</p>
         </div>
-
-        <div class="newtab-section">
-            <div class="newtab-title">
-                <span>🚀</span>
-                <span>Set as New Tab Page?</span>
-            </div>
-            <div class="newtab-description">
-                Start every browsing session with wisdom instead of a blank page
-            </div>
-            <div class="toggle-container">
-                <span class="toggle-label">Enable FeedWise New Tab</span>
-                <div class="toggle active" id="newtab-toggle">
-                    <div class="toggle-slider"></div>
+        
+        <div class="onboarding-content">
+            <div class="left-column">
+                <div class="features">
+                    <div class="feature">
+                        <span class="feature-icon">📱</span>
+                        <div class="feature-title">Multi-Site</div>
+                        <div class="feature-description">Works on Facebook, Twitter, and Instagram</div>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">📚</span>
+                        <div class="feature-title">Content that YOU choose</div>
+                        <div class="feature-description">Shows your Readwise highlights and Obsidian notes</div>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🌙</span>
+                        <div class="feature-title">Distraction-free Design</div>
+                        <div class="feature-description">With dark mode + subtle animations</div>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">📝</span>
+                        <div class="feature-title">Markdown-Ready</div>
+                        <div class="feature-description">Full support for formatted notes and highlights</div>
+                    </div>
                 </div>
             </div>
-            <div class="note">You can always change this later in extension settings
-                <br><br>
-                This is an unofficial extension, and not associated with Readwise or Readwise Reader.
-            </div>
-        </div>
 
-        <div class="actions">
-            <button class="btn btn-primary" id="get-started-btn">Get Started</button>
-            <a href="chrome-extension://EXTENSION_ID/options.html" class="btn" id="options-link">Extension Settings</a>
+            <div class="right-column">
+                <div class="newtab-section">
+                    <div class="newtab-title">
+                        <span>🚀</span>
+                        <span>Set as New Tab Page?</span>
+                    </div>
+                    <div class="newtab-description">
+                        Start every browsing session with wisdom instead of a blank page
+                    </div>
+                    <div class="toggle-container">
+                        <span class="toggle-label">Enable FeedWise New Tab</span>
+                        <div class="toggle active" id="newtab-toggle">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </div>
+                    <div class="note">You can always change this later in extension settings</div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" id="get-started-btn">Get Started</button>
+                    <a href="chrome-extension://EXTENSION_ID/options.html" class="btn" id="options-link">Extension Settings</a>
+                </div>
+
+                <div class="note" style="text-align: center; margin-top: 16px;">
+                    This is an unofficial extension, and not associated with Readwise or Readwise Reader.
+                </div>
+            </div>
         </div>
     </div>
 
