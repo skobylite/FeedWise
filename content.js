@@ -980,6 +980,8 @@ class FeedWiseBlocker {
     this.isLoading = false;
     this.highlightsPerLoad = 5;
     this.platform = this.detectPlatform();
+    this.originalFacebookContent = null;
+    this.dragEventListeners = [];
     this.sessionStartTime = Date.now();
     this.highlightsViewed = 0;
     this.setupPageVisibilityTracking();
@@ -1342,6 +1344,14 @@ class FeedWiseBlocker {
 
   async shouldActivateOnCurrentPage() {
     return new Promise((resolve) => {
+      // Check if wisdomfeed is temporarily disabled after user closed it
+      const disabledUntil = sessionStorage.getItem('wisdomfeed-disabled-until');
+      if (disabledUntil && Date.now() < parseInt(disabledUntil)) {
+        console.log('[WisdomFeed] Temporarily disabled after user closed');
+        resolve(false);
+        return;
+      }
+      
       chrome.storage.local.get(['feedwiseSettings'], (data) => {
         const settings = data.feedwiseSettings || {};
         const platformSettings = settings.platforms || {};
@@ -1605,7 +1615,7 @@ class FeedWiseBlocker {
 
   createGroupedHighlight(highlights) {
     // Combine the quotes with proper formatting
-    const combinedQuote = highlights.map((h, index) => {
+    const combinedQuote = highlights.map((h) => {
       const quote = h.quote.trim();
       // If it's already a list item, keep it as is
       if (this.isListItem(quote)) {
@@ -1729,7 +1739,7 @@ class FeedWiseBlocker {
         // console.log('[WisdomFeed DEBUG] Container computed style:', window.getComputedStyle(container).width);
       }
       
-      const platformName = this.platform.charAt(0).toUpperCase() + this.platform.slice(1);
+      // const platformName = this.platform.charAt(0).toUpperCase() + this.platform.slice(1);
       
       container.innerHTML = `
         <div class="fb-blocker-header">
@@ -1763,6 +1773,10 @@ class FeedWiseBlocker {
         document.body.appendChild(container);
       } else {
         // Replacement approach for Facebook/Instagram
+        // Store original content before clearing for Facebook
+        if (this.platform === 'facebook') {
+          this.originalFacebookContent = feed.innerHTML;
+        }
         feed.innerHTML = '';
         feed.appendChild(container);
         // Ensure the feed element is visible after adding our container
@@ -2082,7 +2096,7 @@ class FeedWiseBlocker {
       const container = document.createElement('div');
       container.className = 'fb-blocker-container';
       
-      const platformEmoji = this.getPlatformEmoji();
+      // const platformEmoji = this.getPlatformEmoji();
       
       container.innerHTML = `
         <div class="fb-blocker-header">
@@ -2141,32 +2155,44 @@ class FeedWiseBlocker {
   setupPageDragAndDrop() {
     const uploadZone = document.getElementById('upload-zone');
     
+    // Store event listeners for cleanup
+    this.dragEventListeners = [];
+    
     // Prevent default drag behaviors
+    const preventDefaultHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      document.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
+      document.addEventListener(eventName, preventDefaultHandler);
+      this.dragEventListeners.push({ eventName, handler: preventDefaultHandler });
     });
 
     // Add visual feedback for drag over entire page
-    document.addEventListener('dragenter', (e) => {
+    const dragEnterHandler = (e) => {
       if (e.dataTransfer.types.includes('Files')) {
         document.body.classList.add('fb-blocker-drag-active');
       }
-    });
+    };
+    document.addEventListener('dragenter', dragEnterHandler);
+    this.dragEventListeners.push({ eventName: 'dragenter', handler: dragEnterHandler });
 
-    document.addEventListener('dragleave', (e) => {
+    const dragLeaveHandler = (e) => {
       if (!e.relatedTarget || e.relatedTarget === document.documentElement) {
         document.body.classList.remove('fb-blocker-drag-active');
       }
-    });
+    };
+    document.addEventListener('dragleave', dragLeaveHandler);
+    this.dragEventListeners.push({ eventName: 'dragleave', handler: dragLeaveHandler });
 
     // Handle drop anywhere on page
-    document.addEventListener('drop', (e) => {
+    const dropHandler = (e) => {
       document.body.classList.remove('fb-blocker-drag-active');
       this.handleFileDrop(e);
-    });
+    };
+    document.addEventListener('drop', dropHandler);
+    this.dragEventListeners.push({ eventName: 'drop', handler: dropHandler });
 
     // Handle click on upload zone
     if (uploadZone) {
@@ -2634,7 +2660,10 @@ class FeedWiseBlocker {
 
     // Setup event handlers
     document.getElementById('exit-yes').addEventListener('click', () => {
-      this.exitWisdomFeed();
+      // Store timestamp to prevent immediate reappearance after reload
+      sessionStorage.setItem('wisdomfeed-disabled-until', Date.now() + 90000); // 90 seconds
+      // Simple page reload to restore original state
+      window.location.reload();
     });
 
     document.getElementById('exit-no').addEventListener('click', () => {
@@ -2687,7 +2716,7 @@ class FeedWiseBlocker {
       }
     }
 
-    // For Facebook, we need to restore display
+    // For Facebook, we need to restore display and original content
     if (this.platform === 'facebook') {
       const fbSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
       for (const selector of fbSelectors) {
@@ -2697,7 +2726,30 @@ class FeedWiseBlocker {
           break;
         }
       }
+      // Restore original Facebook content if available
+      if (this.originalFacebookContent) {
+        const fbSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
+        for (const selector of fbSelectors) {
+          const element = document.querySelector(selector);
+          if (element) {
+            element.innerHTML = this.originalFacebookContent;
+            this.originalFacebookContent = null;
+            break;
+          }
+        }
+      }
     }
+
+    // Clean up drag & drop event listeners
+    if (this.dragEventListeners && this.dragEventListeners.length > 0) {
+      this.dragEventListeners.forEach(({ eventName, handler }) => {
+        document.removeEventListener(eventName, handler);
+      });
+      this.dragEventListeners = [];
+    }
+
+    // Remove any remaining body classes
+    document.body.classList.remove('fb-blocker-drag-active');
 
     // Remove modal
     const modal = document.getElementById('wisdomfeed-exit-modal');

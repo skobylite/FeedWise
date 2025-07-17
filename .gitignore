@@ -44,4 +44,4 @@ $RECYCLE.BIN/
 
 # Temporary files
 *.orig
-*.rej
+*.rejEXCLUSIONS/
