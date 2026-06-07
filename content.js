@@ -1,41 +1,48 @@
+const FEEDWISE_BRAND_BG = chrome.runtime && chrome.runtime.getURL
+  ? chrome.runtime.getURL('propane-backgrounds/Blue 2.png')
+  : '';
+
 // CSS Variables for theme system
 const CSS_VARIABLES = `
   :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-highlight: #ffffff;
-    --text-primary: #1c1e21;
-    --text-secondary: #65676b;
-    --text-accent: #1877f2;
-    --border-color: #dadde1;
-    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --border-radius: 12px;
-    --transition-fast: 0.2s ease;
-    --transition-medium: 0.3s ease;
+    --bg-primary: #050505;
+    --bg-secondary: rgba(5, 5, 5, 0.58);
+    --bg-highlight: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.72);
+    --text-accent: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.14);
+    --shadow-light: none;
+    --shadow-medium: none;
+    --border-radius: 8px;
+    --transition-fast: 160ms cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-medium: 240ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   [data-theme="dark"] {
-    --bg-primary: #18191a;
-    --bg-secondary: #242526;
-    --bg-highlight: #242526;
-    --text-primary: #e4e6ea;
-    --text-secondary: #b0b3b8;
-    --text-accent: #2d88ff;
-    --border-color: #3a3b3c;
-    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --bg-primary: #050505;
+    --bg-secondary: rgba(5, 5, 5, 0.58);
+    --bg-highlight: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.72);
+    --text-accent: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.14);
   }
 `;
 
 // Highlight display styles
 const HIGHLIGHT_STYLES = `
   .fb-blocker-container {
-    background: var(--bg-primary);
+    background-color: var(--bg-primary);
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.78)), url("${FEEDWISE_BRAND_BG}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--text-primary);
     min-height: 100vh;
     padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    font-family: Satoshi, Arial, sans-serif;
     transition: background-color var(--transition-medium), color var(--transition-medium);
     max-width: 100%;
     overflow-x: hidden;
@@ -51,7 +58,7 @@ const HIGHLIGHT_STYLES = `
 
   .fb-blocker-title {
     font-size: 2rem;
-    font-weight: 600;
+    font-weight: 900;
     color: var(--text-primary);
     margin: 0;
     display: flex;
@@ -60,9 +67,10 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-icon {
-    width: 32px;
-    height: 32px;
-    opacity: 0.8;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
   }
 
   .fb-blocker-header-controls {
@@ -78,10 +86,11 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-brain-cells {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
     color: white;
     padding: 8px 16px;
-    border-radius: 50px;
+    border-radius: var(--border-radius);
     font-size: 14px;
     font-weight: 600;
     box-shadow: var(--shadow-light);
@@ -101,22 +110,22 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-add-note-btn {
-    background: var(--bg-secondary);
-    border: 2px solid var(--border-color);
-    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: var(--border-radius);
     padding: 8px 16px;
     cursor: pointer;
     transition: all var(--transition-fast);
     font-size: 14px;
-    color: var(--text-primary);
+    color: #050505;
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
   .fb-blocker-add-note-btn:hover {
-    background: var(--text-accent);
-    color: white;
+    background: #ffffff;
+    color: #050505;
     transform: translateY(-1px);
   }
 
@@ -170,8 +179,8 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-theme-toggle:hover {
-    background: var(--text-accent);
-    color: white;
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--text-primary);
     transform: translateY(-1px);
   }
 
@@ -194,12 +203,19 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-highlight {
-    background: var(--bg-highlight);
-    border: 1px solid var(--border-color);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)),
+      rgba(5, 5, 5, 0.46);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: var(--border-radius);
     padding: 32px;
     margin-bottom: 24px;
-    box-shadow: var(--shadow-light);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+      0 18px 55px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(12px) saturate(112%);
+    -webkit-backdrop-filter: blur(12px) saturate(112%);
     transition: all var(--transition-medium);
     opacity: 0;
     animation: fadeInUp 0.6s ease forwards;
@@ -220,43 +236,41 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-highlight[data-gradient="0"] {
-    background: linear-gradient(135deg, 
-      rgba(102, 126, 234, 0.08) 0%, 
-      rgba(118, 75, 162, 0.12) 100%),
-      var(--bg-highlight);
+    background:
+      linear-gradient(135deg, rgba(6, 94, 194, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+      rgba(5, 5, 5, 0.46);
   }
 
   .fb-blocker-highlight[data-gradient="1"] {
-    background: linear-gradient(135deg, 
-      rgba(240, 147, 251, 0.08) 0%, 
-      rgba(245, 87, 108, 0.12) 100%),
-      var(--bg-highlight);
+    background:
+      linear-gradient(135deg, rgba(171, 12, 37, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+      rgba(5, 5, 5, 0.46);
   }
 
   .fb-blocker-highlight[data-gradient="2"] {
-    background: linear-gradient(135deg, 
-      rgba(79, 172, 254, 0.08) 0%, 
-      rgba(0, 242, 254, 0.12) 100%),
-      var(--bg-highlight);
+    background:
+      linear-gradient(135deg, rgba(40, 69, 66, 0.11) 0%, rgba(255, 255, 255, 0.02) 100%),
+      rgba(5, 5, 5, 0.46);
   }
 
   .fb-blocker-highlight[data-gradient="3"] {
-    background: linear-gradient(135deg, 
-      rgba(67, 233, 123, 0.08) 0%, 
-      rgba(56, 249, 215, 0.12) 100%),
-      var(--bg-highlight);
+    background:
+      linear-gradient(135deg, rgba(2, 99, 66, 0.10) 0%, rgba(255, 255, 255, 0.02) 100%),
+      rgba(5, 5, 5, 0.46);
   }
 
   .fb-blocker-highlight[data-gradient="4"] {
-    background: linear-gradient(135deg, 
-      rgba(250, 112, 154, 0.08) 0%, 
-      rgba(254, 225, 64, 0.12) 100%),
-      var(--bg-highlight);
+    background:
+      linear-gradient(135deg, rgba(201, 126, 30, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+      rgba(5, 5, 5, 0.46);
   }
 
   .fb-blocker-highlight:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+      0 22px 70px rgba(0, 0, 0, 0.24);
   }
 
   .fb-blocker-highlight:hover::before {
@@ -349,8 +363,9 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-group-badge {
-    background: var(--text-accent);
-    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
@@ -390,13 +405,15 @@ const HIGHLIGHT_STYLES = `
   }
 
   .fb-blocker-upload-zone {
-    border: 2px dashed var(--border-color);
+    border: 1px dashed rgba(255, 255, 255, 0.22);
     border-radius: var(--border-radius);
     padding: 40px;
     margin: 30px 0;
     cursor: pointer;
     transition: all var(--transition-fast);
-    background: var(--bg-secondary);
+    background: rgba(255, 255, 255, 0.055);
+    backdrop-filter: blur(10px) saturate(108%);
+    -webkit-backdrop-filter: blur(10px) saturate(108%);
   }
 
   .fb-blocker-upload-zone:hover,
@@ -966,11 +983,60 @@ const HIGHLIGHT_STYLES = `
   }
 `;
 
+// Immediate CSS hiding to prevent flash - runs as soon as script loads
+(function() {
+  // Only run on Facebook domains
+  if (!window.location.hostname.includes('facebook.com')) {
+    return;
+  }
+
+  // Only hide content on main feed pages, not profile pages
+  const pathname = window.location.pathname;
+  const url = window.location.href;
+  const isFeedPage = pathname === '/' || pathname.startsWith('/home') || pathname.startsWith('/events') || url.includes('facebook.com/?');
+
+  if (!isFeedPage) {
+    return; // Don't hide anything on non-feed pages
+  }
+
+  // Inject immediate hiding styles with high specificity
+  const immediateHideStyle = document.createElement('style');
+  immediateHideStyle.id = 'feedwise-immediate-hide';
+  immediateHideStyle.textContent = `
+    /* Hide Facebook feed elements immediately to prevent flash */
+    [role="main"]:not(.fb-blocker-container),
+    [data-pagelet="Feed"]:not(.fb-blocker-container),
+    div[data-pagelet="Feed"]:not(.fb-blocker-container) {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+    /* Ensure our container is always visible */
+    .fb-blocker-container {
+      display: block !important;
+      visibility: visible !important;
+    }
+  `;
+  
+  // Add to document head immediately, even if DOM isn't ready
+  if (document.head) {
+    document.head.appendChild(immediateHideStyle);
+  } else {
+    // If head doesn't exist yet, wait for it
+    const observer = new MutationObserver((_, obs) => {
+      if (document.head) {
+        document.head.appendChild(immediateHideStyle);
+        obs.disconnect();
+      }
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  }
+})();
+
 class FeedWiseBlocker {
   constructor() {
     // Prevent multiple instances of the script from running
     if (window.feedWiseBlockerInstance) {
-      console.log('[WisdomFeed] Script already running, skipping initialization');
       return;
     }
     window.feedWiseBlockerInstance = this;
@@ -999,14 +1065,12 @@ class FeedWiseBlocker {
       chrome.storage.local.get(['feedwiseTheme'], (data) => {
         if (data.feedwiseTheme) {
           // Use user's explicit theme preference
-          console.log('[WisdomFeed] User theme preference:', data.feedwiseTheme);
           resolve(data.feedwiseTheme);
           return;
         }
         
         // Fall back to platform/system detection if no user preference
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        console.log('[WisdomFeed] System prefers dark mode:', prefersDark);
         
         // Check platform-specific dark mode indicators
         const hostname = window.location.hostname;
@@ -1015,26 +1079,35 @@ class FeedWiseBlocker {
     if (hostname.includes('facebook.com')) {
       // Facebook dark mode detection
       platformDark = document.documentElement.getAttribute('data-color-mode') === 'dark' ||
-                    document.body.classList.contains('theme-dark') ||
+                    (document.body && document.body.classList.contains('theme-dark')) ||
                     document.querySelector('[data-colorscheme="dark"]') !== null ||
                     document.querySelector('body[style*="--surface-background: #18191a"]') !== null;
     } else if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
       // Twitter/X dark mode detection - check actual background colors
-      const bodyStyle = window.getComputedStyle(document.body);
-      const backgroundColor = bodyStyle.backgroundColor;
+      const bodyStyle = document.body ? window.getComputedStyle(document.body) : null;
+      const backgroundColor = bodyStyle ? bodyStyle.backgroundColor : '';
       // Twitter light mode is usually white (rgb(255, 255, 255))
-      const isLightBackground = backgroundColor.includes('rgb(255, 255, 255)') || 
+      const isLightBackground = backgroundColor.includes('rgb(255, 255, 255)') ||
                                backgroundColor.includes('rgba(255, 255, 255');
       platformDark = !isLightBackground && (
-                    backgroundColor.includes('rgb(0, 0, 0)') || 
+                    backgroundColor.includes('rgb(0, 0, 0)') ||
                     backgroundColor.includes('rgb(21, 32, 43)') ||
                     backgroundColor.includes('rgb(15, 20, 25)') ||
                     document.documentElement.style.colorScheme === 'dark' ||
                     document.querySelector('meta[name="theme-color"][content="#000000"]') !== null);
+    } else if (hostname.includes('reddit.com')) {
+      // Reddit dark mode detection
+      const bgColor = window.getComputedStyle(document.body).backgroundColor;
+      const htmlEl = document.documentElement;
+      platformDark = htmlEl.classList.contains('theme-dark') ||
+                     htmlEl.getAttribute('data-theme') === 'dark' ||
+                     bgColor === 'rgb(26, 26, 27)' ||
+                     bgColor === 'rgb(15, 20, 25)' ||
+                     bgColor === 'rgb(0, 0, 0)';
     } else if (hostname.includes('instagram.com')) {
       // Instagram dark mode detection - check actual background colors
-      const bodyStyle = window.getComputedStyle(document.body);
-      const backgroundColor = bodyStyle.backgroundColor;
+      const bodyStyle = document.body ? window.getComputedStyle(document.body) : null;
+      const backgroundColor = bodyStyle ? bodyStyle.backgroundColor : '';
       // Instagram light mode is usually white (rgb(255, 255, 255))
       const isLightBackground = backgroundColor.includes('rgb(255, 255, 255)') || 
                                backgroundColor.includes('rgba(255, 255, 255');
@@ -1046,11 +1119,9 @@ class FeedWiseBlocker {
                     document.querySelector('meta[name="theme-color"][content="#000000"]') !== null);
     }
     
-        console.log('[WisdomFeed] Platform dark mode detected:', platformDark);
         
         // Use platform dark mode if detected, otherwise fall back to system preference
         const theme = (platformDark || prefersDark) ? 'dark' : 'light';
-        console.log('[WisdomFeed] Selected theme:', theme);
         
         resolve(theme);
       });
@@ -1059,35 +1130,30 @@ class FeedWiseBlocker {
 
   detectPlatform() {
     const hostname = window.location.hostname;
-    console.log('[WisdomFeed] Detecting platform for hostname:', hostname);
     if (hostname.includes('facebook.com')) {
-      console.log('[WisdomFeed] Detected Facebook');
       return 'facebook';
     }
     if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
-      console.log('[WisdomFeed] Detected Twitter/X');
       return 'twitter';
     }
     if (hostname.includes('instagram.com')) {
-      console.log('[WisdomFeed] Detected Instagram');
       return 'instagram';
     }
-    console.log('[WisdomFeed] Unknown platform');
+    if (hostname.includes('reddit.com')) {
+      return 'reddit';
+    }
     return 'unknown';
   }
 
   async init() {
-    console.log('[WisdomFeed] Initializing on platform:', this.platform, 'URL:', window.location.href);
     
     // Only initialize if we're on a supported platform
     if (this.platform === 'unknown') {
-      console.log('[WisdomFeed] Unknown platform, exiting');
       return;
     }
     
     // Check if this platform is enabled and if we should activate on this page
     const shouldActivate = await this.shouldActivateOnCurrentPage();
-    console.log('[WisdomFeed] Should activate:', shouldActivate);
     if (!shouldActivate) return;
     
     // Track blocking session start
@@ -1137,7 +1203,6 @@ class FeedWiseBlocker {
       analytics.dailyStats[today].platformsBlocked = Array.from(analytics.dailyStats[today].platformsBlocked);
       
       chrome.storage.local.set({ feedwiseAnalytics: analytics });
-      console.log('[WisdomFeed] Tracked blocking session for', this.platform);
     });
   }
 
@@ -1214,7 +1279,6 @@ class FeedWiseBlocker {
       analytics.totalTimeSpent += sessionDuration;
       
       chrome.storage.local.set({ feedwiseAnalytics: analytics });
-      console.log('[WisdomFeed] Tracked session duration:', sessionDuration, 'ms');
     });
   }
 
@@ -1232,7 +1296,8 @@ class FeedWiseBlocker {
       platformStats: {
         facebook: 0,
         twitter: 0,
-        instagram: 0
+        instagram: 0,
+        reddit: 0
       },
       dailyStats: {},
       achievements: []
@@ -1307,12 +1372,19 @@ class FeedWiseBlocker {
   }
 
   async waitForPageLoad() {
-    // Testing without initial delay
-    // const initialWait = this.platform === 'facebook' ? 800 : 1200; // Shorter delay for Facebook
-    // await new Promise(resolve => setTimeout(resolve, initialWait));
+    // Since we now run at document_start, we need to wait for DOM to be ready first
+    if (document.readyState === 'loading') {
+      await new Promise(resolve => {
+        const handler = () => {
+          document.removeEventListener('DOMContentLoaded', handler);
+          resolve();
+        };
+        document.addEventListener('DOMContentLoaded', handler);
+      });
+    }
     
-    // Wait for specific elements based on platform
-    const maxWaits = 8;
+    // Wait for specific elements based on platform with reduced delays
+    const maxWaits = 6; // Reduced from 8
     let waits = 0;
     
     while (waits < maxWaits) {
@@ -1320,7 +1392,10 @@ class FeedWiseBlocker {
       
       switch (this.platform) {
         case 'facebook':
-          targetFound = !!document.querySelector('[role="main"]');
+          // Check for multiple possible selectors since Facebook uses various containers
+          targetFound = !!(document.querySelector('[role="main"]') || 
+                          document.querySelector('[data-pagelet="Feed"]') ||
+                          document.querySelector('div[data-pagelet="Feed"]'));
           break;
         case 'twitter':
           targetFound = !!document.querySelector('[data-testid="primaryColumn"]');
@@ -1328,18 +1403,22 @@ class FeedWiseBlocker {
         case 'instagram':
           targetFound = !!document.querySelector('main[role="main"]');
           break;
+        case 'reddit':
+          targetFound = !!(document.querySelector('shreddit-feed') ||
+                          document.querySelector('main#main-content') ||
+                          document.querySelector('main'));
+          break;
       }
       
       if (targetFound) {
-        console.log('[WisdomFeed] Target element found after', waits * 300, 'ms');
         break;
       }
       
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Reduced wait time from 300ms to 200ms
+      await new Promise(resolve => setTimeout(resolve, 200));
       waits++;
     }
     
-    console.log('[WisdomFeed] Finished waiting for page load after', waits * 300, 'ms');
   }
 
   async shouldActivateOnCurrentPage() {
@@ -1347,7 +1426,6 @@ class FeedWiseBlocker {
       // Check if wisdomfeed is temporarily disabled after user closed it
       const disabledUntil = sessionStorage.getItem('wisdomfeed-disabled-until');
       if (disabledUntil && Date.now() < parseInt(disabledUntil)) {
-        console.log('[WisdomFeed] Temporarily disabled after user closed');
         resolve(false);
         return;
       }
@@ -1373,11 +1451,12 @@ class FeedWiseBlocker {
   isTargetPage() {
     const url = window.location.href;
     const pathname = window.location.pathname;
-    
+
     switch (this.platform) {
       case 'facebook':
-        // Activate on main feed, not on specific posts, profiles, etc.
-        return pathname === '/' || pathname.startsWith('/home') || url.includes('facebook.com/?');
+        // Activate only on main feed and events pages (NOT profile pages)
+        const isTarget = pathname === '/' || pathname.startsWith('/home') || pathname.startsWith('/events') || url.includes('facebook.com/?');
+        return isTarget;
         
       case 'twitter':
         // Activate on home timeline, not on individual tweets or profiles
@@ -1390,9 +1469,14 @@ class FeedWiseBlocker {
                                 !url.includes('/reel/') && !url.includes('/explore/') && 
                                 !url.includes('/direct/') && !url.includes('/accounts/') &&
                                 !url.includes('/profile/');
-        console.log('[WisdomFeed] Instagram check - isHomePage:', isHomePage, 'hasNoSpecialPaths:', hasNoSpecialPaths);
         return isHomePage && hasNoSpecialPaths;
-        
+
+      case 'reddit':
+        // Activate on the home feed and r/popular, r/all, r/home — not individual posts or specific subreddits
+        if (pathname.includes('/comments/')) return false;
+        if (pathname === '/' || pathname === '') return true;
+        return /^\/r\/(popular|all|home)\/?$/.test(pathname);
+
       default:
         return false;
     }
@@ -1410,13 +1494,26 @@ class FeedWiseBlocker {
   hidePlatformFeed() {
     switch (this.platform) {
       case 'facebook':
-        const fbSelectors = ['[role="main"]', '[data-pagelet="Feed"]'];
-        for (const selector of fbSelectors) {
-          const element = document.querySelector(selector);
-          if (element) {
-            element.style.display = 'none';
-            break;
-          }
+        // Facebook elements are already hidden by immediate CSS
+        // Just ensure the immediate hide styles are still in place
+        const existingHideStyle = document.getElementById('feedwise-immediate-hide');
+        if (!existingHideStyle) {
+          // Re-add immediate hide styles if somehow removed
+          const immediateHideStyle = document.createElement('style');
+          immediateHideStyle.id = 'feedwise-immediate-hide';
+          immediateHideStyle.textContent = `
+            [role="main"]:not(.fb-blocker-container),
+            [data-pagelet="Feed"]:not(.fb-blocker-container),
+            div[data-pagelet="Feed"]:not(.fb-blocker-container) {
+              display: none !important;
+              visibility: hidden !important;
+            }
+            .fb-blocker-container {
+              display: block !important;
+              visibility: visible !important;
+            }
+          `;
+          document.head.appendChild(immediateHideStyle);
         }
         break;
         
@@ -1465,14 +1562,16 @@ class FeedWiseBlocker {
           /* Twitter-specific wider layout */
           #wisdomfeed-overlay .fb-blocker-highlights {
             max-width: 1200px !important;
-            width: calc(100vw - 360px) !important;
+            width: 100% !important;
             padding: 0 20px !important;
             margin: 0 auto !important;
+            box-sizing: border-box !important;
           }
-          
+
           #wisdomfeed-overlay .fb-blocker-container {
-            padding: 20px 30px 20px 50px !important;
+            padding: 20px 40px !important;
             width: 100% !important;
+            box-sizing: border-box !important;
           }
           
           #wisdomfeed-overlay .fb-blocker-highlight {
@@ -1485,6 +1584,52 @@ class FeedWiseBlocker {
         // console.log('[WisdomFeed DEBUG] Twitter CSS applied:', twitterHideStyle.textContent.includes('1400px'));
         break;
         
+      case 'reddit':
+        // Use overlay approach like Twitter — Reddit's web components break if we mutate
+        const redditHideStyle = document.createElement('style');
+        redditHideStyle.id = 'wisdomfeed-reddit-hide';
+        redditHideStyle.textContent = `
+          /* Hide reddit header trending, sidebars and feed */
+          shreddit-feed,
+          main#main-content,
+          main,
+          reddit-sidebar-nav,
+          aside,
+          [data-testid="frontpage-sidebar"],
+          [aria-label="Trending searches"] {
+            visibility: hidden !important;
+          }
+
+          /* Ensure our overlay covers everything */
+          #wisdomfeed-overlay {
+            z-index: 9999 !important;
+            visibility: visible !important;
+          }
+          #wisdomfeed-overlay * {
+            visibility: visible !important;
+          }
+
+          /* Reddit-specific wider layout */
+          #wisdomfeed-overlay .fb-blocker-highlights {
+            max-width: 1200px !important;
+            width: 100% !important;
+            padding: 0 20px !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
+          }
+          #wisdomfeed-overlay .fb-blocker-container {
+            padding: 20px 40px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          #wisdomfeed-overlay .fb-blocker-highlight {
+            max-width: none !important;
+            width: 100% !important;
+          }
+        `;
+        document.head.appendChild(redditHideStyle);
+        break;
+
       case 'instagram':
         const igSelectors = [
           'div[style*="max-width: 935px"]',
@@ -1685,26 +1830,25 @@ class FeedWiseBlocker {
       case 'instagram':
         feedSelectors = ['main[role="main"]'];
         break;
+      case 'reddit':
+        feedSelectors = ['main#main-content', 'main', 'shreddit-feed', 'body'];
+        break;
     }
     
-    console.log('[WisdomFeed] Finding platform feed with selectors:', feedSelectors);
     
     for (let i = 0; i < feedSelectors.length; i++) {
       const selector = feedSelectors[i];
       const feed = document.querySelector(selector);
-      console.log('[WisdomFeed] Feed selector', i, ':', selector, '-> Found:', !!feed, feed);
       if (feed) {
-        console.log('[WisdomFeed] Using feed element:', feed);
         return feed;
       }
     }
     
-    console.log('[WisdomFeed] No feed element found!');
     return null;
   }
 
   getPlatformEmoji() {
-    return '🦉';
+    return 'FW';
   }
 
   createContainer() {
@@ -1714,8 +1858,8 @@ class FeedWiseBlocker {
       container.className = 'fb-blocker-container';
       container.id = 'wisdomfeed-overlay';
       
-      // For Twitter, use overlay approach to avoid breaking React
-      if (this.platform === 'twitter') {
+      // For Twitter/Reddit, use overlay approach to avoid breaking React/web-components
+      if (this.platform === 'twitter' || this.platform === 'reddit') {
         container.style.cssText = `
           position: fixed;
           top: 0;
@@ -1744,17 +1888,16 @@ class FeedWiseBlocker {
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <span class="fb-blocker-icon">🦉</span>
-            WisdomFeed
+            <span class="fb-blocker-icon">FEEDWISE</span>
           </h1>
           <div class="fb-blocker-gamification">
             <div class="fb-blocker-brain-cells" id="brain-cells-counter">
-              🧠 <span id="brain-cells-count">0</span> brain cells saved
+              <span id="brain-cells-count">0</span> brain cells saved
             </div>
           </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
-              ➕ Add Note
+              Add Note
             </button>
             <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to ragebait & brainrot?">
               ✕
@@ -1768,8 +1911,8 @@ class FeedWiseBlocker {
       `;
       
       // Use different insertion methods based on platform
-      if (this.platform === 'twitter') {
-        // Fixed overlay for Twitter - append to body for full coverage
+      if (this.platform === 'twitter' || this.platform === 'reddit') {
+        // Fixed overlay - append to body for full coverage (Twitter/Reddit)
         document.body.appendChild(container);
       } else {
         // Replacement approach for Facebook/Instagram
@@ -1825,8 +1968,8 @@ class FeedWiseBlocker {
       container.className = 'fb-blocker-container';
       container.id = 'wisdomfeed-overlay';
       
-      // For Twitter, use overlay approach to avoid breaking React
-      if (this.platform === 'twitter') {
+      // For Twitter/Reddit, use overlay approach to avoid breaking React/web-components
+      if (this.platform === 'twitter' || this.platform === 'reddit') {
         container.style.cssText = `
           position: fixed;
           top: 0;
@@ -1853,17 +1996,16 @@ class FeedWiseBlocker {
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <span class="fb-blocker-icon">🦉</span>
-            WisdomFeed
+            <span class="fb-blocker-icon">FEEDWISE</span>
           </h1>
           <div class="fb-blocker-gamification">
             <div class="fb-blocker-brain-cells" id="brain-cells-counter">
-              🧠 <span id="brain-cells-count">0</span> brain cells saved
+              <span id="brain-cells-count">0</span> brain cells saved
             </div>
           </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
-              ➕ Add Note
+              Add Note
             </button>
             <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
               ✕
@@ -1872,7 +2014,7 @@ class FeedWiseBlocker {
         </div>
         <div class="fb-blocker-upload-zone" id="upload-zone" style="margin-bottom: 30px; background: var(--bg-secondary); border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
           <div class="fb-blocker-upload-content">
-            <div class="fb-blocker-upload-icon" style="font-size: 48px; margin-bottom: 16px;">📁</div>
+            <div class="fb-blocker-upload-icon" style="font-size: 12px; margin-bottom: 16px; font-weight: 900; letter-spacing: 0.18em;">CSV</div>
             <div class="fb-blocker-upload-text" style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Upload your Readwise CSV</div>
             <div class="fb-blocker-upload-subtext" style="color: var(--text-secondary); font-size: 14px;">Drag & drop here or click to browse</div>
           </div>
@@ -1885,8 +2027,8 @@ class FeedWiseBlocker {
       `;
       
       // Use different insertion methods based on platform
-      if (this.platform === 'twitter') {
-        // Fixed overlay for Twitter - append to body for full coverage
+      if (this.platform === 'twitter' || this.platform === 'reddit') {
+        // Fixed overlay - append to body for full coverage (Twitter/Reddit)
         document.body.appendChild(container);
       } else {
         // Insert before approach for Facebook/Instagram
@@ -2012,7 +2154,7 @@ class FeedWiseBlocker {
       
       element.innerHTML = `
         <div class="fb-blocker-note-header-inline">
-          <span class="fb-blocker-note-icon">📝</span>
+          <span class="fb-blocker-note-icon">NOTE</span>
           <span class="fb-blocker-note-title-inline">${noteName}</span>
           <span class="fb-blocker-note-badge">Obsidian Note</span>
         </div>
@@ -2101,17 +2243,16 @@ class FeedWiseBlocker {
       container.innerHTML = `
         <div class="fb-blocker-header">
           <h1 class="fb-blocker-title">
-            <span class="fb-blocker-icon">🦉</span>
-            WisdomFeed
+            <span class="fb-blocker-icon">FEEDWISE</span>
           </h1>
           <div class="fb-blocker-gamification">
             <div class="fb-blocker-brain-cells" id="brain-cells-counter">
-              🧠 <span id="brain-cells-count">0</span> brain cells saved
+              <span id="brain-cells-count">0</span> brain cells saved
             </div>
           </div>
           <div class="fb-blocker-header-controls">
             <button class="fb-blocker-add-note-btn" id="add-note-btn" title="Add New Note">
-              ➕ Add Note
+              Add Note
             </button>
             <button class="fb-blocker-exit-btn" id="exit-btn" title="Go back to the brainrot?">
               ✕
@@ -2123,7 +2264,7 @@ class FeedWiseBlocker {
           <p>Upload your Readwise CSV by dragging it anywhere on this page, or go to the extension options.</p>
           <div class="fb-blocker-upload-zone" id="upload-zone">
             <div class="fb-blocker-upload-content">
-              <div class="fb-blocker-upload-icon">📁</div>
+              <div class="fb-blocker-upload-icon">CSV</div>
               <div class="fb-blocker-upload-text">Drag & drop your CSV here</div>
               <div class="fb-blocker-upload-subtext">or click to browse</div>
             </div>
@@ -2251,7 +2392,7 @@ class FeedWiseBlocker {
           validCount: validHighlights.length
         }, () => {
           this.showUploadStatus(
-            `✅ Successfully uploaded ${validHighlights.length} highlights! Refreshing page...`,
+            `Successfully uploaded ${validHighlights.length} highlights. Refreshing page...`,
             'success'
           );
           
@@ -2261,7 +2402,7 @@ class FeedWiseBlocker {
           }, 2000);
         });
       } catch (error) {
-        this.showUploadStatus('❌ Error processing CSV file. Please check the format.', 'error');
+        this.showUploadStatus('Error processing CSV file. Please check the format.', 'error');
       }
     };
     reader.readAsText(file);
@@ -2416,7 +2557,7 @@ class FeedWiseBlocker {
     
     noteElement.innerHTML = `
       <div class="fb-blocker-note-header-inline">
-        <span class="fb-blocker-note-icon">📝</span>
+        <span class="fb-blocker-note-icon">NOTE</span>
         <span class="fb-blocker-note-title-inline">${filename.replace('.md', '')}</span>
         <span class="fb-blocker-note-badge">Obsidian Note</span>
       </div>
@@ -2508,7 +2649,7 @@ class FeedWiseBlocker {
     
     formElement.innerHTML = `
       <div class="fb-blocker-note-header-inline">
-        <span class="fb-blocker-note-icon">➕</span>
+        <span class="fb-blocker-note-icon">ADD</span>
         <span class="fb-blocker-note-title-inline">Add New Note</span>
         <button class="fb-blocker-note-close-inline" id="close-form">✕</button>
       </div>
@@ -2516,7 +2657,7 @@ class FeedWiseBlocker {
         <input type="text" id="quick-note-title" placeholder="Note title..." class="fb-blocker-quick-title">
         <textarea id="quick-note-content" placeholder="Write your note in markdown..." class="fb-blocker-quick-content"></textarea>
         <div class="fb-blocker-form-actions">
-          <button id="save-quick-note" class="fb-blocker-save-btn" disabled>💾 Save Note</button>
+          <button id="save-quick-note" class="fb-blocker-save-btn" disabled>Save Note</button>
           <button id="cancel-quick-note" class="fb-blocker-cancel-btn">Cancel</button>
         </div>
       </div>
@@ -2585,7 +2726,7 @@ class FeedWiseBlocker {
         this.trackNoteAdded();
         
         // Show success message
-        this.showNoteStatus(`✅ Note "${title}" saved successfully!`, 'success');
+        this.showNoteStatus(`Note "${title}" saved successfully.`, 'success');
         
         // Optionally display the new note inline
         this.displayNoteInline(title + '.md', content);
@@ -2643,9 +2784,9 @@ class FeedWiseBlocker {
             transition: all 0.2s ease;
           ">Yes</button>
           <button id="exit-no" style="
-            background: var(--text-accent);
-            color: white;
-            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.24);
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
@@ -2702,6 +2843,10 @@ class FeedWiseBlocker {
     if (styleElement) {
       styleElement.remove();
     }
+    const redditStyleElement = document.getElementById('wisdomfeed-reddit-hide');
+    if (redditStyleElement) {
+      redditStyleElement.remove();
+    }
 
     // For Twitter, we need to restore visibility
     if (this.platform === 'twitter') {
@@ -2757,7 +2902,6 @@ class FeedWiseBlocker {
       modal.remove();
     }
 
-    console.log('[WisdomFeed] User returned to original feed');
   }
 }
 
@@ -2765,5 +2909,4 @@ class FeedWiseBlocker {
 if (!window.feedWiseBlockerInstance) {
   new FeedWiseBlocker();
 } else {
-  console.log('[WisdomFeed] Extension already initialized, skipping');
 }
